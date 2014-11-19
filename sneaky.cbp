@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="sneaky" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/project-duck" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DROB_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-lFreeImage" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/project-duck" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="Profile">
+				<Option output="bin/Profile/project-duck" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Profile/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-pg" />
+					<Add option="-g" />
+					<Add option="-Og" />
+					<Add option="-DROB_DEBUG" />
+				</Compiler>
+				<Linker>
+					<Add option="-pg -lgmon" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-fno-exceptions" />
+			<Add option="-Winit-self" />
+			<Add option="-Wcast-align" />
+			<Add option="-Wunreachable-code" />
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-msse2" />
+			<Add option="-Wno-unused-parameter" />
+			<Add directory="src" />
+			<Add directory="3rdparty/liquidfun/Box2D" />
+		</Compiler>
+		<Linker>
+			<Add option="-lmingw32" />
+			<Add option="-lSDL2main -lSDL2" />
+			<Add option="-lglew32 -lopengl32" />
+			<Add option="-lOpenAL32" />
+		</Linker>
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Box2D.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2ChainShape.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2ChainShape.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2CircleShape.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2CircleShape.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2EdgeShape.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2EdgeShape.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2PolygonShape.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2PolygonShape.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2Shape.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2BroadPhase.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2BroadPhase.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2CollideCircle.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2CollideEdge.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2CollidePolygon.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2Collision.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2Collision.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2Distance.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2Distance.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2DynamicTree.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2DynamicTree.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2TimeOfImpact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/b2TimeOfImpact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2BlockAllocator.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2BlockAllocator.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Draw.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Draw.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2FreeList.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2FreeList.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2GrowableBuffer.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2GrowableStack.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2IntrusiveList.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Math.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Math.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Settings.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Settings.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2SlabAllocator.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2StackAllocator.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2StackAllocator.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Stat.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Stat.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Timer.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2Timer.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2TrackedBlock.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Common/b2TrackedBlock.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ChainAndCircleContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ChainAndCircleContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ChainAndPolygonContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ChainAndPolygonContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2CircleContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2CircleContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2Contact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2Contact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ContactSolver.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2ContactSolver.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2EdgeAndCircleContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2EdgeAndCircleContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2EdgeAndPolygonContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2EdgeAndPolygonContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2PolygonAndCircleContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2PolygonAndCircleContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2PolygonContact.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Contacts/b2PolygonContact.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2DistanceJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2DistanceJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2FrictionJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2FrictionJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2GearJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2GearJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2Joint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2Joint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2MotorJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2MotorJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2MouseJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2MouseJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2PrismaticJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2PrismaticJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2PulleyJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2PulleyJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2RevoluteJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2RevoluteJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2RopeJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2RopeJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2WeldJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2WeldJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2WheelJoint.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/Joints/b2WheelJoint.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Body.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Body.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2ContactManager.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2ContactManager.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Fixture.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Fixture.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Island.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2Island.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2TimeStep.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2World.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2World.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2WorldCallbacks.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Dynamics/b2WorldCallbacks.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2Particle.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2Particle.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleAssembly.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleAssembly.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleGroup.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleGroup.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleSystem.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2ParticleSystem.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2StackQueue.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2VoronoiDiagram.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2VoronoiDiagram.h" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.cpp" />
+		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.h" />
+		<Unit filename="TODO.txt" />
+		<Unit filename="src/duck/B2DebugDraw.cpp" />
+		<Unit filename="src/duck/B2DebugDraw.h" />
+		<Unit filename="src/duck/Facts.cpp" />
+		<Unit filename="src/duck/Facts.h" />
+		<Unit filename="src/duck/FadeEffect.cpp" />
+		<Unit filename="src/duck/FadeEffect.h" />
+		<Unit filename="src/duck/Game.cpp" />
+		<Unit filename="src/duck/Game.h" />
+		<Unit filename="src/duck/GameData.h" />
+		<Unit filename="src/duck/GameObject.cpp" />
+		<Unit filename="src/duck/GameObject.h" />
+		<Unit filename="src/duck/GameState.h" />
+		<Unit filename="src/duck/HighScoreList.cpp" />
+		<Unit filename="src/duck/HighScoreList.h" />
+		<Unit filename="src/duck/Physics.h" />
+		<Unit filename="src/duck/PidController.h" />
+		<Unit filename="src/duck/Sensor.h" />
+		<Unit filename="src/duck/SneakyState.cpp" />
+		<Unit filename="src/duck/SneakyState.h" />
+		<Unit filename="src/duck/SoundPlayer.h" />
+		<Unit filename="src/rob/Assert.cpp" />
+		<Unit filename="src/rob/Assert.h" />
+		<Unit filename="src/rob/Log.cpp" />
+		<Unit filename="src/rob/Log.h" />
+		<Unit filename="src/rob/String.h" />
+		<Unit filename="src/rob/Types.h" />
+		<Unit filename="src/rob/application/Game.cpp" />
+		<Unit filename="src/rob/application/Game.h" />
+		<Unit filename="src/rob/application/GameState.cpp" />
+		<Unit filename="src/rob/application/GameState.h" />
+		<Unit filename="src/rob/application/GameTime.cpp" />
+		<Unit filename="src/rob/application/GameTime.h" />
+		<Unit filename="src/rob/application/Window.cpp" />
+		<Unit filename="src/rob/application/Window.h" />
+		<Unit filename="src/rob/audio/ALCheck.cpp" />
+		<Unit filename="src/rob/audio/ALCheck.h" />
+		<Unit filename="src/rob/audio/AudioSystem.cpp" />
+		<Unit filename="src/rob/audio/AudioSystem.h" />
+		<Unit filename="src/rob/filesystem/FileCopy.cpp" />
+		<Unit filename="src/rob/filesystem/FileCopy.h" />
+		<Unit filename="src/rob/filesystem/FileStat.cpp" />
+		<Unit filename="src/rob/filesystem/FileStat.h" />
+		<Unit filename="src/rob/filesystem/FileSystem.cpp" />
+		<Unit filename="src/rob/filesystem/FileSystem.h" />
+		<Unit filename="src/rob/filesystem/FilesFromDirectory.cpp" />
+		<Unit filename="src/rob/filesystem/FilesFromDirectory.h" />
+		<Unit filename="src/rob/graphics/BufferObject.cpp" />
+		<Unit filename="src/rob/graphics/BufferObject.h" />
+		<Unit filename="src/rob/graphics/GLCheck.cpp" />
+		<Unit filename="src/rob/graphics/GLCheck.h" />
+		<Unit filename="src/rob/graphics/GLTypes.h" />
+		<Unit filename="src/rob/graphics/Graphics.cpp" />
+		<Unit filename="src/rob/graphics/Graphics.h" />
+		<Unit filename="src/rob/graphics/GraphicsTypes.h" />
+		<Unit filename="src/rob/graphics/IndexBuffer.cpp" />
+		<Unit filename="src/rob/graphics/IndexBuffer.h" />
+		<Unit filename="src/rob/graphics/Shader.cpp" />
+		<Unit filename="src/rob/graphics/Shader.h" />
+		<Unit filename="src/rob/graphics/ShaderProgram.cpp" />
+		<Unit filename="src/rob/graphics/ShaderProgram.h" />
+		<Unit filename="src/rob/graphics/Texture.cpp" />
+		<Unit filename="src/rob/graphics/Texture.h" />
+		<Unit filename="src/rob/graphics/Uniform.cpp" />
+		<Unit filename="src/rob/graphics/Uniform.h" />
+		<Unit filename="src/rob/graphics/VertexBuffer.cpp" />
+		<Unit filename="src/rob/graphics/VertexBuffer.h" />
+		<Unit filename="src/rob/input/Keyboard.cpp" />
+		<Unit filename="src/rob/input/Keyboard.h" />
+		<Unit filename="src/rob/input/Mouse.cpp" />
+		<Unit filename="src/rob/input/Mouse.h" />
+		<Unit filename="src/rob/input/TextInput.cpp" />
+		<Unit filename="src/rob/input/TextInput.h" />
+		<Unit filename="src/rob/main.cpp" />
+		<Unit filename="src/rob/math/Constants.h" />
+		<Unit filename="src/rob/math/Functions.cpp" />
+		<Unit filename="src/rob/math/Functions.h" />
+		<Unit filename="src/rob/math/Math.h" />
+		<Unit filename="src/rob/math/Matrix4.h" />
+		<Unit filename="src/rob/math/Projection.cpp" />
+		<Unit filename="src/rob/math/Projection.h" />
+		<Unit filename="src/rob/math/Random.h" />
+		<Unit filename="src/rob/math/Types.h" />
+		<Unit filename="src/rob/math/Vector2.h" />
+		<Unit filename="src/rob/math/Vector4.h" />
+		<Unit filename="src/rob/math/simd/NoSimd.h" />
+		<Unit filename="src/rob/math/simd/SSE2.h" />
+		<Unit filename="src/rob/math/simd/Simd.h" />
+		<Unit filename="src/rob/memory/AlignedStorage.h" />
+		<Unit filename="src/rob/memory/Freelist.cpp" />
+		<Unit filename="src/rob/memory/Freelist.h" />
+		<Unit filename="src/rob/memory/LinearAllocator.cpp" />
+		<Unit filename="src/rob/memory/LinearAllocator.h" />
+		<Unit filename="src/rob/memory/Pool.h" />
+		<Unit filename="src/rob/memory/PtrAlign.h" />
+		<Unit filename="src/rob/renderer/Color.cpp" />
+		<Unit filename="src/rob/renderer/Color.h" />
+		<Unit filename="src/rob/renderer/DefaultShaders.cpp" />
+		<Unit filename="src/rob/renderer/Font.cpp" />
+		<Unit filename="src/rob/renderer/Font.h" />
+		<Unit filename="src/rob/renderer/Renderer.cpp" />
+		<Unit filename="src/rob/renderer/Renderer.h" />
+		<Unit filename="src/rob/renderer/TextLayout.h" />
+		<Unit filename="src/rob/resource/BmfFont.internal.h" />
+		<Unit filename="src/rob/resource/FontCache.cpp" />
+		<Unit filename="src/rob/resource/FontCache.h" />
+		<Unit filename="src/rob/resource/MasterCache.cpp" />
+		<Unit filename="src/rob/resource/MasterCache.h" />
+		<Unit filename="src/rob/resource/ResourceCache.h" />
+		<Unit filename="src/rob/resource/ResourceID.h" />
+		<Unit filename="src/rob/resource/SoundCache.cpp" />
+		<Unit filename="src/rob/resource/SoundCache.h" />
+		<Unit filename="src/rob/resource/TextureCache.cpp" />
+		<Unit filename="src/rob/resource/TextureCache.h" />
+		<Unit filename="src/rob/resource/builder/MasterBuilder.cpp">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/MasterBuilder.h">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/ResourceBuilder.cpp">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/ResourceBuilder.h">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/ResourceCopier.cpp">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/ResourceCopier.h">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/TextureBuilder.cpp">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/resource/builder/TextureBuilder.h">
+			<Option target="Debug" />
+			<Option target="Profile" />
+		</Unit>
+		<Unit filename="src/rob/time/MicroTicker.cpp" />
+		<Unit filename="src/rob/time/MicroTicker.h" />
+		<Unit filename="src/rob/time/Time.cpp" />
+		<Unit filename="src/rob/time/Time.h" />
+		<Unit filename="src/rob/time/VirtualTime.cpp" />
+		<Unit filename="src/rob/time/VirtualTime.h" />
+		<Unit filename="src/rob/util/StreamUtil.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

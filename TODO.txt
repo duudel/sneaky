@@ -1,0 +1,29 @@
+The TODO list for Rob engine.
+
+
+rob TODO
+--------
+
+Add FontManager or similar functionality
+    - Fonts are used through FontHandle abstraction
+    - FontCache uses font manager to obtain new fonts, similar to
+      graphics resources
+    - Also, Renderer::SetFont() should be implemented
+
+Fix audio: deleting buffers when sound playing is not OK.
+
+
+These items have already been done
+rob DONE
+--------
+
+Renderer::DrawLine
+
+Make TextInput support UTF8.
+    - Needs utility functions like SkipUtf8Left, SkipUtf8Right, etc.
+
+Reference counting for uniforms:
+    - shader destroyed -> decrement references of linked uniforms
+    - reference count == 0 -> destroy uniform
+    - add a virtual user (reference) for global uniforms to prevent
+      destroying them
