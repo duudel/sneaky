@@ -21,6 +21,8 @@ namespace sneaky
     using rob::GameTime;
     using rob::Color;
 
+    class Brain;
+
     class GameObject
     {
     public:
@@ -30,10 +32,18 @@ namespace sneaky
         void SetPosition(const vec2f &pos);
         vec2f GetPosition() const;
 
+        void MoveLocal(const vec2f &delta);
+        void MoveGlobal(const vec2f &delta);
+
+        void SetRotation(const vec2f &dir);
+
         vec2f GetDimensions() const;
 
         void SetBody(b2Body *body) { m_body = body; }
         b2Body* GetBody() { return m_body; }
+
+        void SetBrain(Brain *brain);
+        Brain* GetBrain();
 
         void SetColor(const Color &color);
         Color GetColor() const;
@@ -60,6 +70,7 @@ namespace sneaky
 
     private:
         b2Body *m_body;
+        Brain *m_brain;
 
         Color m_color;
         rob::TextureHandle m_texture;

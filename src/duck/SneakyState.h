@@ -13,6 +13,7 @@
 #include "FadeEffect.h"
 #include "SoundPlayer.h"
 #include "Sensor.h"
+#include "Input.h"
 
 namespace sneaky
 {
@@ -55,6 +56,9 @@ namespace sneaky
         void RenderParticleSystem(b2ParticleSystem *ps);
         void Render() override;
 
+        void OnKeyDown(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods) override;
+        void OnKeyUp(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods) override;
+
         void OnKeyPress(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods) override;
         void OnMouseDown(rob::MouseButton button, int x, int y) override;
         void OnMouseUp(rob::MouseButton button, int x, int y) override;
@@ -76,6 +80,8 @@ namespace sneaky
         rob::Pool<GameObject> m_objectPool;
         GameObject **m_objects;
         size_t m_objectCount;
+
+        Input m_input;
 
         SensorListener m_sensorListener;
         FadeEffect m_fadeEffect;

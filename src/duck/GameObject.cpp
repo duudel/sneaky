@@ -1,5 +1,7 @@
 
 #include "GameObject.h"
+#include "Brain.h"
+
 #include "rob/renderer/Renderer.h"
 #include "rob/graphics/Graphics.h"
 
@@ -10,6 +12,7 @@ namespace sneaky
 
     GameObject::GameObject()
         : m_body(nullptr)
+        , m_brain(nullptr)
         , m_color(Color::White)
         , m_texture(InvalidHandle)
         , m_textureScale(1.0f)
@@ -19,13 +22,30 @@ namespace sneaky
     { }
 
     GameObject::~GameObject()
-    { }
+    {
+        delete m_brain;
+    }
 
     void GameObject::SetPosition(const vec2f &pos)
     { m_body->SetTransform(ToB2(pos), m_body->GetAngle()); }
 
     vec2f GameObject::GetPosition() const
     { return FromB2(m_body->GetPosition()); }
+
+    void GameObject::MoveLocal(const vec2f &delta)
+    {
+        const vec2f globalDelta = FromB2(m_body->GetWorldVector(ToB2(delta)));
+        MoveGlobal(globalDelta);
+    }
+
+    void GameObject::MoveGlobal(const vec2f &delta)
+    { SetPosition(GetPosition() + delta); }
+
+    void GameObject::SetRotation(const vec2f &dir)
+    {
+        m_body->SetTransform(ToB2(GetPosition()), b2Atan2(-dir.x, dir.y));
+//        m_body->SetTransform(ToB2(GetPosition()), b2Atan2(dir.y, dir.x));
+    }
 
     vec2f GameObject::GetDimensions() const
     {
@@ -55,6 +75,12 @@ namespace sneaky
         return FromB2(aabb.GetExtents());
     }
 
+    void GameObject::SetBrain(Brain *brain)
+    { m_brain = brain; m_brain->SetOwner(this); }
+
+    Brain* GameObject::GetBrain()
+    { return m_brain; }
+
     void GameObject::SetColor(const Color &color)
     { m_color = color; }
 
@@ -75,7 +101,7 @@ namespace sneaky
 
     void GameObject::Update(const GameTime &gameTime)
     {
-//        float dt = gameTime.GetDeltaSeconds();
+        if (m_brain) m_brain->Update(gameTime);
     }
 
     void GameObject::Render(Renderer *renderer)

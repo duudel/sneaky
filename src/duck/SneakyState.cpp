@@ -1,6 +1,8 @@
 
 #include "SneakyState.h"
 #include "GameState.h"
+#include "Brain.h"
+
 #include "B2DebugDraw.h"
 
 #include "rob/renderer/Renderer.h"
@@ -57,6 +59,7 @@ namespace sneaky
         , m_objectPool()
         , m_objects(nullptr)
         , m_objectCount(0)
+        , m_input()
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
@@ -88,7 +91,7 @@ namespace sneaky
         flags += b2Draw::e_particleBit;
         m_debugDraw->SetFlags(flags);
 
-        m_world = GetAllocator().new_object<b2World>(b2Vec2(0.0, -9.81f));
+        m_world = GetAllocator().new_object<b2World>(b2Vec2(0.0f, 0.0f));
         m_world->SetDebugDraw(m_debugDraw);
 
         m_world->SetContactListener(&m_sensorListener);
@@ -99,6 +102,8 @@ namespace sneaky
         m_worldBody = m_world->CreateBody(&wbodyDef);
 
         m_sounds.Init(GetAudio(), GetCache());
+
+        m_input.SetView(&m_view);
 
         CreateWorld();
         return true;
@@ -118,6 +123,26 @@ namespace sneaky
         CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize / 4.0f, -PLAY_AREA_H / 2.0f + 1.0f), 0.0f, wallSize / 2.0f, PLAY_AREA_H / 2.0f);
         // Ceiling
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
+
+
+        GameObject *pl = CreateObject(nullptr);
+
+        b2BodyDef pldef;
+//        pldef.type = b2_kinematicBody;
+        pldef.type = b2_dynamicBody;
+        pldef.userData = pl;
+        b2Body *plBody = m_world->CreateBody(&pldef);
+
+        pl->SetBody(plBody);
+        pl->SetTexture(GetCache().GetTexture("player.tex"));
+
+        b2CircleShape plShape;
+        plShape.m_radius = 1.0f;
+        plBody->CreateFixture(&plShape, 1.0f);
+
+        PlayerBrain *plBrain = GetAllocator().new_object<PlayerBrain>(&m_input);
+
+        pl->SetBrain(plBrain);
     }
 
     GameObject* SneakyState::CreateObject(GameObject *prevLink /*= nullptr*/)
@@ -256,6 +281,7 @@ namespace sneaky
         m_inUpdate = true;
         const float deltaTime = gameTime.GetDeltaSeconds();
 
+        m_input.UpdateMouse();
         m_sounds.UpdateTime(gameTime);
 
         if (IsGameOver() && m_mouseJoint)
@@ -397,6 +423,16 @@ namespace sneaky
             RenderGameOver();
     }
 
+
+    void SneakyState::OnKeyDown(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods)
+    {
+        m_input.SetKey(scancode, true);
+    }
+
+    void SneakyState::OnKeyUp(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods)
+    {
+        m_input.SetKey(scancode, false);
+    }
 
 
     void SneakyState::OnKeyPress(Keyboard::Key key, Keyboard::Scancode scancode, uint32_t mods)
