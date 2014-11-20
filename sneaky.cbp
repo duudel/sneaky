@@ -179,26 +179,6 @@
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.cpp" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.h" />
 		<Unit filename="TODO.txt" />
-		<Unit filename="src/duck/B2DebugDraw.cpp" />
-		<Unit filename="src/duck/B2DebugDraw.h" />
-		<Unit filename="src/duck/Facts.cpp" />
-		<Unit filename="src/duck/Facts.h" />
-		<Unit filename="src/duck/FadeEffect.cpp" />
-		<Unit filename="src/duck/FadeEffect.h" />
-		<Unit filename="src/duck/Game.cpp" />
-		<Unit filename="src/duck/Game.h" />
-		<Unit filename="src/duck/GameData.h" />
-		<Unit filename="src/duck/GameObject.cpp" />
-		<Unit filename="src/duck/GameObject.h" />
-		<Unit filename="src/duck/GameState.h" />
-		<Unit filename="src/duck/HighScoreList.cpp" />
-		<Unit filename="src/duck/HighScoreList.h" />
-		<Unit filename="src/duck/Physics.h" />
-		<Unit filename="src/duck/PidController.h" />
-		<Unit filename="src/duck/Sensor.h" />
-		<Unit filename="src/duck/SneakyState.cpp" />
-		<Unit filename="src/duck/SneakyState.h" />
-		<Unit filename="src/duck/SoundPlayer.h" />
 		<Unit filename="src/rob/Assert.cpp" />
 		<Unit filename="src/rob/Assert.h" />
 		<Unit filename="src/rob/Log.cpp" />
@@ -331,6 +311,30 @@
 		<Unit filename="src/rob/time/VirtualTime.cpp" />
 		<Unit filename="src/rob/time/VirtualTime.h" />
 		<Unit filename="src/rob/util/StreamUtil.h" />
+		<Unit filename="src/sneaky/B2DebugDraw.cpp" />
+		<Unit filename="src/sneaky/B2DebugDraw.h" />
+		<Unit filename="src/sneaky/Brain.cpp" />
+		<Unit filename="src/sneaky/Brain.h" />
+		<Unit filename="src/sneaky/Facts.cpp" />
+		<Unit filename="src/sneaky/Facts.h" />
+		<Unit filename="src/sneaky/FadeEffect.cpp" />
+		<Unit filename="src/sneaky/FadeEffect.h" />
+		<Unit filename="src/sneaky/Game.cpp" />
+		<Unit filename="src/sneaky/Game.h" />
+		<Unit filename="src/sneaky/GameData.h" />
+		<Unit filename="src/sneaky/GameObject.cpp" />
+		<Unit filename="src/sneaky/GameObject.h" />
+		<Unit filename="src/sneaky/GameState.h" />
+		<Unit filename="src/sneaky/HighScoreList.cpp" />
+		<Unit filename="src/sneaky/HighScoreList.h" />
+		<Unit filename="src/sneaky/Input.cpp" />
+		<Unit filename="src/sneaky/Input.h" />
+		<Unit filename="src/sneaky/Physics.h" />
+		<Unit filename="src/sneaky/PidController.h" />
+		<Unit filename="src/sneaky/Sensor.h" />
+		<Unit filename="src/sneaky/SneakyState.cpp" />
+		<Unit filename="src/sneaky/SneakyState.h" />
+		<Unit filename="src/sneaky/SoundPlayer.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

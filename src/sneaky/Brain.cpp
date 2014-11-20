@@ -11,7 +11,7 @@ namespace sneaky
 
     void PlayerBrain::Update(const rob::GameTime &gameTime)
     {
-        const float dt = gameTime.GetDeltaSeconds();
+//        const float dt = gameTime.GetDeltaSeconds();
 
         const vec2f target = m_input->GetMouseWorldPosition();
         const vec2f dir = (target - m_owner->GetPosition()).Normalized();
