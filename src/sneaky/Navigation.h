@@ -35,7 +35,7 @@ namespace sneaky
             uint16_t faces[8];
         };
 
-        static const uint16_t MAX_FACES = 1024;
+        static const uint16_t MAX_FACES = 1024*24;
         static const uint16_t MAX_VERTICES = 1024*32;
     public:
         NavMesh();
@@ -44,12 +44,16 @@ namespace sneaky
         void Allocate(rob::LinearAllocator &alloc);
         void SetGrid(const b2World *world, const float halfSize, const float agentRadius);
 
+        size_t GetFaceCount() const { return m_faceCount; }
+        const Face& GetFace(size_t index) const { return m_faces[index]; }
+
         size_t GetVertexCount() const { return m_vertexCount; }
         const Vert& GetVertex(size_t index) const { return m_vertices[index]; }
 
     private:
         static bool TestPoint(const b2World *world, float x, float y);
         void AddVertex(float x, float y, bool active);
+        uint16_t AddFace(uint16_t i0, uint16_t i1, uint16_t i2);
 
     private:
         size_t m_faceCount;
