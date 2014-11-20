@@ -60,6 +60,7 @@ namespace sneaky
         , m_objects(nullptr)
         , m_objectCount(0)
         , m_input()
+        , m_nav()
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
@@ -123,6 +124,9 @@ namespace sneaky
         CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize / 4.0f, -PLAY_AREA_H / 2.0f + 1.0f), 0.0f, wallSize / 2.0f, PLAY_AREA_H / 2.0f);
         // Ceiling
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
+
+
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W * 2.0f, 2.0f);
 
 
         GameObject *pl = CreateObject(nullptr);
@@ -411,6 +415,8 @@ namespace sneaky
             renderer.BindColorShader();
             m_world->DrawDebugData();
         }
+
+        m_nav.RenderMesh(&renderer);
 
         renderer.SetModel(mat4f::Identity);
         m_fadeEffect.Render(&renderer);

@@ -14,6 +14,7 @@
 #include "SoundPlayer.h"
 #include "Sensor.h"
 #include "Input.h"
+#include "Navigation.h"
 
 namespace sneaky
 {
@@ -82,6 +83,8 @@ namespace sneaky
         size_t m_objectCount;
 
         Input m_input;
+
+        Navigation m_nav;
 
         SensorListener m_sensorListener;
         FadeEffect m_fadeEffect;
