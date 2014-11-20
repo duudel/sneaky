@@ -126,7 +126,8 @@ namespace sneaky
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
 
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W * 2.0f, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
+        m_nav.FindNodePath(0, 575*2);
 
 
         GameObject *pl = CreateObject(nullptr);

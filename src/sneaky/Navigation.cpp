@@ -71,9 +71,9 @@ namespace sneaky
             }
         }
 
-        for (size_t y = 0; y < sideVerts - 1; y++)
+        for (size_t y = 0; y < sideFaces; y++)
         {
-            for (size_t x = 0; x < sideVerts - 1; x++)
+            for (size_t x = 0; x < sideFaces; x++)
             {
                 // The faces: 3-2
                 //            |/|
@@ -86,17 +86,47 @@ namespace sneaky
                 Vert& v1 = m_vertices[i1];
                 Vert& v2 = m_vertices[i2];
                 Vert& v3 = m_vertices[i3];
-                if (v0.flags & v1.flags & v2.flags & v3.flags & VertActive)
-                {
-                    const uint16_t fi0 = AddFace(i0, i1, i2);
-                    const uint16_t fi1 = AddFace(i0, i2, i3);
-                    Face &f0 = m_faces[fi0];
-                    Face &f1 = m_faces[fi1];
-                    f0.neighbours[0] = fi1;
-                    f1.neighbours[0] = fi0;
-                }
+
+                bool faceActive = (v0.flags & v1.flags & v2.flags & v3.flags & VertActive);
+
+                const uint16_t fi0 = AddFace(i0, i1, i2, faceActive);
+                const uint16_t fi1 = AddFace(i2, i3, i0, faceActive);
+
+                const uint16_t fi = (y * sideFaces + x) * 2;
+
+                Face &f0 = m_faces[fi0];
+                Face &f1 = m_faces[fi1];
+
+                if (y > 0)
+                    f0.neighbours[0] = fi - sideFaces * 2 + 1;
+                if (x < sideFaces - 1)
+                    f0.neighbours[1] = fi + 3;
+                f0.neighbours[2] = fi + 1;
+
+                if (y < sideFaces - 1)
+                    f1.neighbours[0] = fi + sideFaces * 2;
+                if (x > 0)
+                    f1.neighbours[1] = fi - 2;
+                f1.neighbours[2] = fi;
             }
         }
+    }
+
+    vec2f NavMesh::GetFaceCenter(const Face &f) const
+    {
+        const NavMesh::Vert &v0 = GetVertex(f.vertices[0]);
+        const NavMesh::Vert &v1 = GetVertex(f.vertices[1]);
+        const NavMesh::Vert &v2 = GetVertex(f.vertices[2]);
+
+        return vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
+    }
+
+    float NavMesh::GetDist(uint16_t fi0, uint16_t fi1) const
+    {
+        const Face &f0 = m_faces[fi0];
+        const Face &f1 = m_faces[fi1];
+
+        return (GetFaceCenter(f0) - GetFaceCenter(f1)).Length();
     }
 
     bool NavMesh::TestPoint(const b2World *world, float x, float y)
@@ -121,7 +151,7 @@ namespace sneaky
         for (size_t i = 0; i < 8; i++) v.faces[i] = InvalidIndex;
     }
 
-    uint16_t NavMesh::AddFace(uint16_t i0, uint16_t i1, uint16_t i2)
+    uint16_t NavMesh::AddFace(uint16_t i0, uint16_t i1, uint16_t i2, bool active)
     {
         ROB_ASSERT(m_faceCount < MAX_FACES);
         const uint16_t faceI = m_faceCount++;
@@ -130,13 +160,34 @@ namespace sneaky
         f.vertices[1] = i1;
         f.vertices[2] = i2;
         for (size_t i = 0; i < 3; i++) f.neighbours[i] = InvalidIndex;
+        f.flags = active ? FaceActive : 0;
         return faceI;
     }
 
 
+    NavPath::NavPath()
+        : m_len(0)
+    { }
+
+    void NavPath::AppendVertex(float x, float y)
+    {
+        ROB_ASSERT(m_len < MAX_PATH_LEN);
+        m_path[m_len++] = vec2f(x, y);
+    }
+
+    size_t NavPath::GetLength() const
+    { return m_len; }
+
+    const vec2f &NavPath::GetVertex(size_t index) const
+    {
+        ROB_ASSERT(index < m_len);
+        return m_path[index];
+    }
+
 
     Navigation::Navigation()
-        : m_mesh()
+        : m_world(nullptr)
+        , m_mesh()
     { }
 
     Navigation::~Navigation()
@@ -144,16 +195,135 @@ namespace sneaky
 
     bool Navigation::CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfSize, const float agentRadius)
     {
+        m_world = world;
         m_mesh.Allocate(alloc);
         m_mesh.SetGrid(world, worldHalfSize, agentRadius);
+        m_nodes = alloc.AllocateArray<Node>(m_mesh.GetFaceCount());
         return false;
     }
 
-    void Navigation::RenderMesh(rob::Renderer *renderer)
+    NavPath *Navigation::ObtainNavPath()
+    { return m_np.Obtain(); }
+
+    void Navigation::ReturnNavPath(NavPath *path)
+    { m_np.Return(path); }
+
+    bool Navigation::FindNodePath(uint16_t startFace, uint16_t endFace)
+    {
+        m_path.len = 0;
+
+        const float inf = 1e6f;
+        const int nodeCount = m_mesh.GetFaceCount();
+
+        int n = nodeCount;
+
+        for(int i = 0; i < nodeCount; ++i)
+        {
+            m_nodes[i].dist = inf;
+            m_nodes[i].prev = NavMesh::InvalidIndex;
+            m_nodes[i].closed = false;
+        }
+
+        m_nodes[startFace].dist = 0.0f;
+
+        while (n > 0)
+        {
+            int u = 0;
+            float d = inf;
+            for(int i = 0; i < nodeCount; ++i)
+            {
+                if (m_nodes[i].closed) continue;
+                if (m_nodes[i].dist < d)
+                {
+                    u = i;
+                    d = m_nodes[i].dist;
+                }
+            }
+
+            m_nodes[u].closed = true;
+            n--;
+
+            if(u == endFace) break;
+            if(d > inf - 100.0f) return false;
+
+            for (int i = 0; i < 3; i++)
+            {
+                int v = m_mesh.GetFace(u).neighbours[i];
+                if (v == NavMesh::InvalidIndex)
+                    continue;
+                if (m_nodes[v].closed) // TODO: This is bad if the navmesh is not a grid (maybe)
+                    continue;
+                if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
+                    continue;
+
+                float alt = d + m_mesh.GetDist(u, v);
+
+                if (alt < m_nodes[v].dist)
+                {
+                    m_nodes[v].dist = alt;
+                    m_nodes[v].prev = u;
+                }
+            }
+        }
+
+        int v = endFace;
+        while (m_nodes[v].prev != NavMesh::InvalidIndex)
+        {
+            v = m_nodes[v].prev;
+            m_path.len++;
+        }
+
+        if (m_path.len > MAX_PATH_LEN)
+            return false;
+
+        int u = endFace;
+        for (int i = m_path.len - 1; i >= 0; i--)
+        {
+            m_path.path[i] = u;
+            u = m_nodes[u].prev;
+        }
+
+        return true;
+    }
+
+    void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path)
+    {
+//        int num = 0;
+//        vec2f candidates[3];
+//        vec2f current = start;
+//
+//        for (int i = 0; i < m_path.len; i++)
+//        {
+//            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
+//
+//            num = 0;
+//            for (int j = 0; j < 3; j++)
+//            {
+//                m_world->
+//            }
+//
+//        }
+    }
+
+    bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
+    {
+//        uint16_t startFace = m_mesh.GetFaceIndex(start);
+//        uint16_t endFace = m_mesh.GetFaceIndex(end);
+//
+//        if (FindNodePath(startFace, endFace))
+//        {
+//            FindStraightPath(start, end, path);
+//            return true;
+//        }
+
+        return false;
+    }
+
+    void Navigation::RenderMesh(rob::Renderer *renderer) const
     {
         renderer->SetModel(mat4f::Identity);
         renderer->BindColorShader();
-        renderer->SetColor(rob::Color::LightBlue);
+//        renderer->SetColor(rob::Color::LightBlue);
 
 //        const size_t vertCount = m_mesh.GetVertexCount();
 //        for (size_t i = 0; i < vertCount; i+=2)
@@ -167,7 +337,7 @@ namespace sneaky
 //            renderer->DrawFilledCircle(v.x, v.y, 0.10f);
 //        }
 
-        renderer->SetColor(rob::Color::LightGreen);
+//        renderer->SetColor(rob::Color::LightGreen);
         const size_t faceCount = m_mesh.GetFaceCount();
         for (size_t i = 0; i < faceCount; i++)
         {
@@ -176,9 +346,43 @@ namespace sneaky
             const NavMesh::Vert &v1 = m_mesh.GetVertex(f.vertices[1]);
             const NavMesh::Vert &v2 = m_mesh.GetVertex(f.vertices[2]);
 
+            if (f.flags & NavMesh::FaceActive)
+                renderer->SetColor(rob::Color::LightGreen);
+            else
+                renderer->SetColor(rob::Color::Red);
+
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
             renderer->DrawLine(v2.x, v2.y, v0.x, v0.y);
+        }
+
+        renderer->SetColor(rob::Color::Magenta);
+        const size_t pathLen = m_path.len;
+        for (size_t i = 0; i < pathLen; i++)
+        {
+            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
+            const NavMesh::Vert &v0 = m_mesh.GetVertex(f.vertices[0]);
+            const NavMesh::Vert &v1 = m_mesh.GetVertex(f.vertices[1]);
+            const NavMesh::Vert &v2 = m_mesh.GetVertex(f.vertices[2]);
+
+            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+            renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
+            renderer->DrawLine(v2.x, v2.y, v0.x, v0.y);
+        }
+    }
+
+    void Navigation::RenderPath(rob::Renderer *renderer, const NavPath *path) const
+    {
+        renderer->SetModel(mat4f::Identity);
+        renderer->BindColorShader();
+        renderer->SetColor(rob::Color::White);
+
+        const size_t pathLen = path->GetLength();
+        for (size_t i = 1; i < pathLen; i++)
+        {
+            const vec2f &v0 = path->GetVertex(i - 1);
+            const vec2f &v1 = path->GetVertex(i);
+            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
         }
     }
 
