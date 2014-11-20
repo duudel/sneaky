@@ -329,6 +329,8 @@
 		<Unit filename="src/sneaky/HighScoreList.h" />
 		<Unit filename="src/sneaky/Input.cpp" />
 		<Unit filename="src/sneaky/Input.h" />
+		<Unit filename="src/sneaky/Navigation.cpp" />
+		<Unit filename="src/sneaky/Navigation.h" />
 		<Unit filename="src/sneaky/Physics.h" />
 		<Unit filename="src/sneaky/PidController.h" />
 		<Unit filename="src/sneaky/Sensor.h" />
