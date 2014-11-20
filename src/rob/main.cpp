@@ -1,7 +1,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "duck/Game.h"
+#include "sneaky/Game.h"
 
 #ifdef ROB_DEBUG
 #include "resource/Builder/MasterBuilder.h"
