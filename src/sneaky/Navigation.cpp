@@ -110,6 +110,22 @@ namespace sneaky
                 f1.neighbours[2] = fi;
             }
         }
+
+        m_gridSz = gridSz;
+        m_halfSize = halfSize;
+    }
+
+    uint16_t NavMesh::GetFaceIndex(const vec2f &v) const
+    {
+        const int gridW = (m_halfSize * 2) / m_gridSz;
+        const vec2f p = v + vec2f(m_halfSize);
+        int x = p.x / m_gridSz;
+        int y = p.y / m_gridSz;
+        x = rob::Clamp(x, 0, gridW - 1);
+        y = rob::Clamp(y, 0, gridW - 1);
+        int index = (y * gridW + x) * 2;
+        if (p.y > p.x) return index + 1;
+        return index;
     }
 
     vec2f NavMesh::GetFaceCenter(const Face &f) const
@@ -199,6 +215,7 @@ namespace sneaky
         m_mesh.Allocate(alloc);
         m_mesh.SetGrid(world, worldHalfSize, agentRadius);
         m_nodes = alloc.AllocateArray<Node>(m_mesh.GetFaceCount());
+        m_np.SetMemory(alloc.AllocateArray<NavPath>(16), rob::GetArraySize<NavPath>(16));
         return false;
     }
 
@@ -286,35 +303,85 @@ namespace sneaky
         return true;
     }
 
+    struct PathRayCast : public b2RayCastCallback
+    {
+        bool hit;
+
+        PathRayCast()
+            : hit(false)
+        { }
+
+        float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) override
+        {
+            hit = (fixture->GetBody()->GetType() == b2_staticBody);
+            return !(hit);
+        }
+
+        bool ShouldQueryParticleSystem(const b2ParticleSystem* particleSystem) override
+        {
+            B2_NOT_USED(particleSystem);
+            return false;
+        }
+    };
+
     void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path)
     {
-//        int num = 0;
-//        vec2f candidates[3];
-//        vec2f current = start;
-//
-//        for (int i = 0; i < m_path.len; i++)
-//        {
-//            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
-//
-//            num = 0;
-//            for (int j = 0; j < 3; j++)
-//            {
-//                m_world->
-//            }
-//
-//        }
+        int num = 0;
+        vec2f candidates[3];
+        vec2f dest = start;
+        vec2f current = start;
+
+        path->AppendVertex(start.x, start.y);
+
+        for (int i = 0; i < m_path.len; i++)
+        {
+            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
+
+            num = 0;
+            for (int j = 0; j < 3; j++)
+            {
+                PathRayCast rayCast;
+                const NavMesh::Vert &v = m_mesh.GetVertex(f.vertices[j]);
+                candidates[num] = vec2f(v.x, v.y);
+                m_world->RayCast(&rayCast, ToB2(current), ToB2(candidates[num]));
+                if (!rayCast.hit) num++;
+            }
+
+            float minDist = 1e6f;
+
+            if (num == 0)
+            {
+                path->AppendVertex(dest.x, dest.y);
+                current = dest;
+            }
+            else
+            {
+                for (int j = 0; j < num; j++)
+                {
+                    float dist = (candidates[j] - current).Length2();
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        dest = candidates[j];
+                    }
+                }
+            }
+        }
+
+        path->AppendVertex(dest.x, dest.y);
+        path->AppendVertex(end.x, end.y);
     }
 
     bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
     {
-//        uint16_t startFace = m_mesh.GetFaceIndex(start);
-//        uint16_t endFace = m_mesh.GetFaceIndex(end);
-//
-//        if (FindNodePath(startFace, endFace))
-//        {
-//            FindStraightPath(start, end, path);
-//            return true;
-//        }
+        uint16_t startFace = m_mesh.GetFaceIndex(start);
+        uint16_t endFace = m_mesh.GetFaceIndex(end);
+
+        if (FindNodePath(startFace, endFace))
+        {
+            FindStraightPath(start, end, path);
+            return true;
+        }
 
         return false;
     }

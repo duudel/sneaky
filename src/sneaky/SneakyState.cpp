@@ -69,6 +69,8 @@ namespace sneaky
         m_random.Seed(GetTicks());
     }
 
+    static NavPath *path = nullptr;
+
     SneakyState::~SneakyState()
     {
         DestroyAllObjects();
@@ -76,6 +78,8 @@ namespace sneaky
         GetAllocator().del_object(m_debugDraw);
         GetAudio().StopAllSounds();
         GetAudio().Update();
+
+        m_nav.ReturnNavPath(path);
     }
 
     bool SneakyState::Initialize()
@@ -110,6 +114,7 @@ namespace sneaky
         return true;
     }
 
+
     void SneakyState::CreateWorld()
     {
         const float wallSize = 1.25f;
@@ -127,7 +132,8 @@ namespace sneaky
 
 
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
-        m_nav.FindNodePath(0, 575*2);
+        path = m_nav.ObtainNavPath();
+        m_nav.Navigate(vec2f(-PLAY_AREA_W, -PLAY_AREA_W), vec2f(PLAY_AREA_W, PLAY_AREA_W), path);
 
 
         GameObject *pl = CreateObject(nullptr);
@@ -418,6 +424,7 @@ namespace sneaky
         }
 
         m_nav.RenderMesh(&renderer);
+        m_nav.RenderPath(&renderer, path);
 
         renderer.SetModel(mat4f::Identity);
         m_fadeEffect.Render(&renderer);

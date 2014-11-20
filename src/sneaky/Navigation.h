@@ -54,6 +54,7 @@ namespace sneaky
 
         size_t GetFaceCount() const { return m_faceCount; }
         const Face& GetFace(size_t index) const { return m_faces[index]; }
+        uint16_t GetFaceIndex(const vec2f &v) const;
 
         size_t GetVertexCount() const { return m_vertexCount; }
         const Vert& GetVertex(size_t index) const { return m_vertices[index]; }
@@ -72,6 +73,9 @@ namespace sneaky
 
         size_t m_vertexCount;
         Vert *m_vertices;
+
+        float m_gridSz;
+        float m_halfSize;
     };
 
     constexpr uint16_t MAX_PATH_LEN = 256;
@@ -122,7 +126,7 @@ namespace sneaky
         void RenderMesh(rob::Renderer *renderer) const;
         void RenderPath(rob::Renderer *renderer, const NavPath *path) const;
 
-    //private:
+    private:
         bool FindNodePath(uint16_t startFace, uint16_t endFace);
         void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path);
 
