@@ -88,6 +88,11 @@ namespace sneaky
                 Vert& v3 = m_vertices[i3];
 
                 bool faceActive = (v0.flags & v1.flags & v2.flags & v3.flags & VertActive);
+                if (faceActive)
+                {
+                    const vec2f c = vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
+                    faceActive &= !TestPoint(world, c.x, c.y);
+                }
 
                 const uint16_t fi0 = AddFace(i0, i1, i2, faceActive);
                 const uint16_t fi1 = AddFace(i2, i3, i0, faceActive);
