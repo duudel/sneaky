@@ -3,6 +3,7 @@
 #include "Physics.h"
 #include "Input.h"
 #include "GameObject.h"
+#include "Navigation.h"
 
 #include "rob/application/GameTime.h"
 
@@ -42,6 +43,61 @@ namespace sneaky
 //        m_owner->MoveLocal(velocity);
         const vec2f globalVel = FromB2(m_owner->GetBody()->GetWorldVector(ToB2(velocity)));
         m_owner->GetBody()->SetLinearVelocity(ToB2(globalVel));
+    }
+
+
+
+
+    GuardBrain::GuardBrain(Navigation *nav)
+        : Brain()
+        , m_nav(nav)
+        , m_path(nullptr)
+        , m_pathPos(0)
+        , m_rand()
+    {
+        m_path = m_nav->ObtainNavPath();
+//        m_rand.Seed(12312);
+    }
+
+    GuardBrain::~GuardBrain()
+    {
+        m_nav->ReturnNavPath(m_path);
+    }
+
+    void GuardBrain::Update(const rob::GameTime &gameTime)
+    {
+        if (m_pathPos < m_path->GetLength())
+        {
+            const vec2f &v = m_path->GetVertex(m_pathPos);
+            const vec2f delta = (v - m_owner->GetPosition());
+
+            const float dist2 = delta.Length2();
+            const float maxDist = 0.5f;
+            if (dist2 < maxDist*maxDist)
+            {
+                m_pathPos++;
+            }
+
+            const float speed = 5.0f;
+            const vec2f velocity = delta.SafeNormalized() * speed;
+            m_owner->GetBody()->SetLinearVelocity(ToB2(velocity));
+        }
+        else
+        {
+            Navigate(m_rand.GetDirection() * 20.0f);
+        }
+    }
+
+    void GuardBrain::Navigate(const vec2f &pos)
+    {
+        m_pathPos = 0;
+        m_path->Clear();
+        m_nav->Navigate(m_owner->GetPosition(), pos, m_path);
+    }
+
+    void GuardBrain::DebugRender(rob::Renderer *renderer) const
+    {
+        m_nav->RenderPath(renderer, m_path);
     }
 
 } // sneaky

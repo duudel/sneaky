@@ -2,9 +2,13 @@
 #ifndef H_SNEAKY_BRAIN_H
 #define H_SNEAKY_BRAIN_H
 
+#include "Physics.h"
+#include "rob/math/Random.h"
+
 namespace rob
 {
     class GameTime;
+    class Renderer;
 } // rob
 
 namespace sneaky
@@ -22,6 +26,7 @@ namespace sneaky
         virtual ~Brain() { }
 
         virtual void Update(const rob::GameTime &gameTime) = 0;
+        virtual void DebugRender(rob::Renderer *renderer) const { }
 
         void SetOwner(GameObject *owner) { m_owner = owner; }
 
@@ -46,15 +51,24 @@ namespace sneaky
 
 
     class Navigation;
+    class NavPath;
 
     class GuardBrain : public Brain
     {
     public:
         explicit GuardBrain(Navigation *nav);
         ~GuardBrain();
+
         void Update(const rob::GameTime &gameTime) override;
+        void DebugRender(rob::Renderer *renderer) const override;
+
+        void Navigate(const vec2f &pos);
+
     private:
         Navigation *m_nav;
+        NavPath *m_path;
+        size_t m_pathPos;
+        rob::Random m_rand;
     };
 
 } // sneaky

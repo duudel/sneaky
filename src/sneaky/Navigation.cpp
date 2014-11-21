@@ -221,6 +221,7 @@ namespace sneaky
     }
 
 
+
     NavPath::NavPath()
         : m_len(0)
     { }
@@ -242,6 +243,16 @@ namespace sneaky
         ROB_ASSERT(index < m_len);
         return m_path[index];
     }
+
+    const vec2f &NavPath::GetDestination() const
+    {
+        ROB_ASSERT(m_len > 0);
+        return m_path[m_len - 1];
+    }
+
+    bool NavPath::IsEmpty() const
+    { return m_len == 0; }
+
 
 
     Navigation::Navigation()

@@ -23,7 +23,7 @@ namespace sneaky
 
     GameObject::~GameObject()
     {
-        delete m_brain;
+        if (m_brain) m_brain->~Brain();
     }
 
     void GameObject::SetPosition(const vec2f &pos)
@@ -141,6 +141,8 @@ namespace sneaky
             renderer->BindTextureShader();
             renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
         }
+
+        if (m_brain) m_brain->DebugRender(renderer);
     }
 
     void GameObject::SetNext(GameObject *object)

@@ -96,6 +96,10 @@ namespace sneaky
         size_t GetLength() const;
         const vec2f &GetVertex(size_t index) const;
 
+        const vec2f &GetDestination() const;
+
+        bool IsEmpty() const;
+
     private:
         size_t m_len;
         vec2f m_path[MAX_PATH_LEN];

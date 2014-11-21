@@ -156,9 +156,10 @@ namespace sneaky
         plShape.m_radius = 1.0f;
         plBody->CreateFixture(&plShape, 1.0f);
 
-        PlayerBrain *plBrain = GetAllocator().new_object<PlayerBrain>(&m_input);
+//        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(&m_input);
+        Brain *brain = GetAllocator().new_object<GuardBrain>(&m_nav);
 
-        pl->SetBrain(plBrain);
+        pl->SetBrain(brain);
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
