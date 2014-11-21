@@ -16,7 +16,7 @@ namespace rob
         Random()
             : m_generator()
         {
-            Seed(GetTicks());
+            Seed(GetTime());
         }
 
         void Seed(uint32_t seed)

@@ -179,6 +179,14 @@ namespace rob
     template <class T>
     Vector2<T> Vector2<T>::UnitY(0, 1);
 
+    template <class T>
+    T Distance(const Vector2<T> &a, const Vector2<T> &b)
+    { return (a - b).Length(); }
+
+    template <class T>
+    T Distance2(const Vector2<T> &a, const Vector2<T> &b)
+    { return (a - b).Length2(); }
+
 } // rob
 
 #endif // H_ROB_MATH_VECTOR2_H

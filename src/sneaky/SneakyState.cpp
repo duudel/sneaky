@@ -140,26 +140,29 @@ namespace sneaky
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);
 
+        for (size_t i = 0; i < 10; i++)
+            CreateGuard(m_random.GetDirection()*m_random.GetReal(0.0, 20.0));
 
-        GameObject *pl = CreateObject(nullptr);
 
-        b2BodyDef pldef;
-//        pldef.type = b2_kinematicBody;
-        pldef.type = b2_dynamicBody;
-        pldef.userData = pl;
-        b2Body *plBody = m_world->CreateBody(&pldef);
-
-        pl->SetBody(plBody);
-        pl->SetTexture(GetCache().GetTexture("player.tex"));
-
-        b2CircleShape plShape;
-        plShape.m_radius = 1.0f;
-        plBody->CreateFixture(&plShape, 1.0f);
-
-//        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(&m_input);
-        Brain *brain = GetAllocator().new_object<GuardBrain>(&m_nav);
-
-        pl->SetBrain(brain);
+//        GameObject *pl = CreateObject(nullptr);
+//
+//        b2BodyDef pldef;
+////        pldef.type = b2_kinematicBody;
+//        pldef.type = b2_dynamicBody;
+//        pldef.userData = pl;
+//        b2Body *plBody = m_world->CreateBody(&pldef);
+//
+//        pl->SetBody(plBody);
+//        pl->SetTexture(GetCache().GetTexture("player.tex"));
+//
+//        b2CircleShape plShape;
+//        plShape.m_radius = 1.0f;
+//        plBody->CreateFixture(&plShape, 1.0f);
+//
+////        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(&m_input);
+//        Brain *brain = GetAllocator().new_object<GuardBrain>(&m_nav);
+//
+//        pl->SetBrain(brain);
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
@@ -196,11 +199,39 @@ namespace sneaky
         shape.SetAsBox(w, h);
         b2Fixture *fix = body->CreateFixture(&shape, 1.0f);
         b2Filter filter;
-        filter.categoryBits = StaticBits;
+        filter.categoryBits = StaticBit;
         fix->SetFilterData(filter);
 
         m_objects[m_objectCount++] = object;
         return object;
+    }
+
+    GameObject* SneakyState::CreateGuard(const vec2f &position)
+    {
+        GameObject *guard = CreateObject(nullptr);
+
+        b2BodyDef bodyDef;
+//        bodyDef.type = b2_kinematicBody;
+        bodyDef.type = b2_dynamicBody;
+        bodyDef.userData = guard;
+        bodyDef.position = ToB2(position);
+        b2Body *body = m_world->CreateBody(&bodyDef);
+
+        guard->SetBody(body);
+        guard->SetTexture(GetCache().GetTexture("player.tex"));
+
+        b2CircleShape shape;
+        shape.m_radius = 1.0f;
+        b2FixtureDef fixDef;
+        fixDef.shape = &shape;
+        fixDef.density = 1.0f;
+        fixDef.filter.categoryBits = GuardBit;
+        body->CreateFixture(&fixDef);
+
+        Brain *brain = GetAllocator().new_object<GuardBrain>(&m_nav, m_random);
+
+        guard->SetBrain(brain);
+        return guard;
     }
 
     void SneakyState::DestroyObject(GameObject *object)

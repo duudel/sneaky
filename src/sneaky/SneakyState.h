@@ -37,6 +37,7 @@ namespace sneaky
 
         GameObject* CreateObject(GameObject *prevLink = nullptr);
         GameObject* CreateStaticBox(const vec2f &position, float angle, float w, float h);
+        GameObject* CreateGuard(const vec2f &position);
 
         void DestroyObject(GameObject *object);
         void DestroyLinkedObjects(GameObject *object);

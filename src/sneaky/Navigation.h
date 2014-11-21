@@ -92,6 +92,10 @@ namespace sneaky
         void Clear();
 
         void AppendVertex(float x, float y);
+        void ReplaceVertex(size_t index, float x, float y);
+        void InsertVertex(size_t index, float x, float y);
+
+        bool TryInsertVertex(size_t index, const vec2f &v, float maxReplaceDist);
 
         size_t GetLength() const;
         const vec2f &GetVertex(size_t index) const;

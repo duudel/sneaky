@@ -235,6 +235,39 @@ namespace sneaky
         m_path[m_len++] = vec2f(x, y);
     }
 
+    void NavPath::ReplaceVertex(size_t index, float x, float y)
+    {
+        ROB_ASSERT(index < m_len);
+        m_path[index] = vec2f(x, y);
+    }
+
+    void NavPath::InsertVertex(size_t index, float x, float y)
+    {
+        ROB_ASSERT(m_len < MAX_PATH_LEN);
+        ROB_ASSERT(index < m_len);
+        for (size_t i = m_len; i > index; i--)
+            m_path[i] = m_path[i - 1];
+        m_path[index] = vec2f(x, y);
+        m_len++;
+    }
+
+    bool NavPath::TryInsertVertex(size_t index, const vec2f &v, float maxReplaceDist)
+    {
+        ROB_ASSERT(index < m_len);
+        if (rob::Distance(m_path[index], v) < maxReplaceDist)
+        {
+            ReplaceVertex(index, v.x, v.y);
+        }
+        else
+        {
+            if (index < MAX_PATH_LEN)
+                InsertVertex(index, v.x, v.y);
+            else
+                return false;
+        }
+        return true;
+    }
+
     size_t NavPath::GetLength() const
     { return m_len; }
 

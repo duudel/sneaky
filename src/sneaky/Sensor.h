@@ -13,10 +13,10 @@ namespace sneaky
 
     enum
     {
-        BirdBits = BIT(5),
-        SensorBits = BIT(6),
-        StaticBits = BIT(7),
-        WheelBits = BIT(8)
+        GuardBit = BIT(5),
+        SensorBit = BIT(6),
+        StaticBit = BIT(7),
+        AllBits = 0xffff
     };
 
     class Sensor
@@ -36,8 +36,8 @@ namespace sneaky
         virtual ~Sensor()
         { }
 
-        void SetDuckState(SneakyState *duckState)
-        { m_duckState = duckState; }
+        void SetState(SneakyState *state)
+        { m_state = state; }
 
         void SetBody(b2Body *body)
         { m_body = body; }
@@ -50,23 +50,23 @@ namespace sneaky
             fixDef.shape = shape;
             fixDef.userData = this;
             fixDef.isSensor = true;
-            fixDef.filter.categoryBits = SensorBits;
+            fixDef.filter.categoryBits = SensorBit;
             fixDef.filter.maskBits = m_maskBits;
             m_body->CreateFixture(&fixDef);
         }
 
-        virtual void BeginContact(void *userData) { }
-        virtual void EndContact(void *userData) { }
+        virtual void BeginContact(b2Fixture *fixture, void *userData) { }
+        virtual void EndContact(b2Fixture *fixture, void *userData) { }
         virtual void BeginParticleContact(b2ParticleSystem *ps, const b2ParticleBodyContact *particleBodyContact) { }
         virtual void EndParticleContact(b2ParticleSystem *ps, int index) { }
 
     protected:
-        SneakyState *m_duckState;
+        SneakyState *m_state;
+        b2Body *m_body;
 
     private:
         uint16 m_maskBits;
         bool m_particles;
-        b2Body *m_body;
     };
 
     class SensorListener : public b2ContactListener
@@ -75,17 +75,17 @@ namespace sneaky
         void BeginContact(b2Contact* contact) override
         {
             Sensor *sensor = nullptr;
-            void *userData = GetUserDataAndSensor(&sensor, contact);
+            b2Fixture *fixture = GetFixtureAndSensor(&sensor, contact);
             if (sensor)
-                sensor->BeginContact(userData);
+                sensor->BeginContact(fixture, fixture->GetUserData());
         }
 
         void EndContact(b2Contact *contact) override
         {
             Sensor *sensor = nullptr;
-            void *userData = GetUserDataAndSensor(&sensor, contact);
+            b2Fixture *fixture = GetFixtureAndSensor(&sensor, contact);
             if (sensor)
-                sensor->EndContact(userData);
+                sensor->EndContact(fixture, fixture->GetUserData());
         }
 
         void BeginContact(b2ParticleSystem *ps, b2ParticleBodyContact *particleBodyContact) override
@@ -101,18 +101,18 @@ namespace sneaky
         }
 
     private:
-        void* GetUserDataAndSensor(Sensor **sensor, b2Contact *contact)
+        b2Fixture* GetFixtureAndSensor(Sensor **sensor, b2Contact *contact)
         {
             if (( *sensor = GetSensor(contact->GetFixtureA()) ))
-                return contact->GetFixtureB()->GetUserData();
+                return contact->GetFixtureB();
             if (( *sensor = GetSensor(contact->GetFixtureB()) ))
-                return contact->GetFixtureA()->GetUserData();
+                return contact->GetFixtureA();
             return nullptr;
         }
 
         Sensor *GetSensor(const b2Fixture *fixture)
         {
-            if (fixture->GetFilterData().categoryBits == SensorBits)
+            if (fixture->GetFilterData().categoryBits == SensorBit)
                 return (Sensor*)fixture->GetUserData();
             return nullptr;
         }

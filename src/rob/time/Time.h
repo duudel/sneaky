@@ -8,6 +8,8 @@ namespace rob
 {
 
     uint32_t GetTicks();
+    uint32_t GetTime();
+
     void Delay(uint32_t milliseconds);
 
 } // rob

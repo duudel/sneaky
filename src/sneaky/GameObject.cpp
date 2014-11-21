@@ -50,6 +50,10 @@ namespace sneaky
     vec2f GameObject::GetDimensions() const
     {
         const b2Fixture *fixture = m_body->GetFixtureList();
+        while (fixture && fixture->IsSensor())
+            fixture = fixture->GetNext();
+        if (!fixture) return vec2f::Zero;
+
         const b2Shape *shape = fixture->GetShape();
 
         b2AABB aabb;
@@ -59,15 +63,18 @@ namespace sneaky
         shape->ComputeAABB(&aabb, tr, 0);
         while (fixture)
         {
-            const b2Shape *shape = fixture->GetShape();
-            for (int i = 0; i < shape->GetChildCount(); i++)
+            if (!fixture->IsSensor())
             {
-                const b2Vec2 r(shape->m_radius, shape->m_radius);
-                b2AABB shapeAabb;
-                shape->ComputeAABB(&shapeAabb, tr, i);
-                shapeAabb.lowerBound = shapeAabb.lowerBound + r;
-                shapeAabb.upperBound = shapeAabb.upperBound - r;
-                aabb.Combine(shapeAabb);
+                const b2Shape *shape = fixture->GetShape();
+                for (int i = 0; i < shape->GetChildCount(); i++)
+                {
+                    const b2Vec2 r(shape->m_radius, shape->m_radius);
+                    b2AABB shapeAabb;
+                    shape->ComputeAABB(&shapeAabb, tr, i);
+                    shapeAabb.lowerBound = shapeAabb.lowerBound + r;
+                    shapeAabb.upperBound = shapeAabb.upperBound - r;
+                    aabb.Combine(shapeAabb);
+                }
             }
             fixture = fixture->GetNext();
         }
@@ -76,7 +83,11 @@ namespace sneaky
     }
 
     void GameObject::SetBrain(Brain *brain)
-    { m_brain = brain; m_brain->SetOwner(this); }
+    {
+        m_brain = brain;
+        m_brain->SetOwner(this);
+        m_brain->OnInitialize();
+    }
 
     Brain* GameObject::GetBrain()
     { return m_brain; }
