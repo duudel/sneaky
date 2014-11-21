@@ -52,15 +52,17 @@ namespace sneaky
         void Allocate(rob::LinearAllocator &alloc);
         void SetGrid(const b2World *world, const float halfSize, const float agentRadius);
 
-        size_t GetFaceCount() const { return m_faceCount; }
-        const Face& GetFace(size_t index) const { return m_faces[index]; }
+        size_t GetFaceCount() const;
+        const Face& GetFace(size_t index) const;
+
+        size_t GetVertexCount() const;
+        const Vert& GetVertex(size_t index) const;
+
         uint16_t GetFaceIndex(const vec2f &v) const;
 
-        size_t GetVertexCount() const { return m_vertexCount; }
-        const Vert& GetVertex(size_t index) const { return m_vertices[index]; }
-
         vec2f GetFaceCenter(const Face &f) const;
-        float GetDist(uint16_t f0, uint16_t f1) const;
+        vec2f GetEdgeCenter(uint16_t f, int edge) const;
+        float GetDist(uint16_t f0, uint16_t f1, int neighborIndex, const vec2f &prevPoint) const;
 
     private:
         static bool TestPoint(const b2World *world, float x, float y);
@@ -77,6 +79,8 @@ namespace sneaky
         float m_gridSz;
         float m_halfSize;
     };
+
+    void ToggleDistF();
 
     constexpr uint16_t MAX_PATH_LEN = 256;
 
@@ -127,7 +131,7 @@ namespace sneaky
         void RenderPath(rob::Renderer *renderer, const NavPath *path) const;
 
     private:
-        bool FindNodePath(uint16_t startFace, uint16_t endFace);
+        bool FindNodePath(const vec2f &start, const vec2f &end, uint16_t startFace, uint16_t endFace);
         void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path);
 
     private:

@@ -131,7 +131,7 @@ namespace sneaky
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
 
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.2f);
         path = m_nav.ObtainNavPath();
         m_nav.Navigate(vec2f(-PLAY_AREA_W, -PLAY_AREA_W), vec2f(PLAY_AREA_W, PLAY_AREA_W), path);
 
@@ -484,6 +484,11 @@ namespace sneaky
 
         // TODO: These are for debugging
         {
+            if (key == Keyboard::Key::T)
+            {
+                ToggleDistF();
+                ChangeState(STATE_Game);
+            }
             if (key == Keyboard::Key::Tab)
                 m_drawBox2D = !m_drawBox2D;
             if (key == Keyboard::Key::Space && !IsGameOver())
