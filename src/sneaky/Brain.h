@@ -29,18 +29,32 @@ namespace sneaky
         GameObject *m_owner;
     };
 
+
     class Input;
 
     class PlayerBrain : public Brain
     {
     public:
-        PlayerBrain(Input *input)
+        explicit PlayerBrain(Input *input)
             : Brain()
             , m_input(input)
         { }
         void Update(const rob::GameTime &gameTime) override;
     private:
         Input *m_input;
+    };
+
+
+    class Navigation;
+
+    class GuardBrain : public Brain
+    {
+    public:
+        explicit GuardBrain(Navigation *nav);
+        ~GuardBrain();
+        void Update(const rob::GameTime &gameTime) override;
+    private:
+        Navigation *m_nav;
     };
 
 } // sneaky

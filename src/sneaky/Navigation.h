@@ -89,6 +89,8 @@ namespace sneaky
     public:
         NavPath();
 
+        void Clear();
+
         void AppendVertex(float x, float y);
 
         size_t GetLength() const;

@@ -225,6 +225,9 @@ namespace sneaky
         : m_len(0)
     { }
 
+    void NavPath::Clear()
+    { m_len = 0; }
+
     void NavPath::AppendVertex(float x, float y)
     {
         ROB_ASSERT(m_len < MAX_PATH_LEN);
@@ -376,6 +379,8 @@ namespace sneaky
         vec2f candidates[3];
         vec2f dest = start;
         vec2f current = start;
+
+        path->Clear();
 
         path->AppendVertex(start.x, start.y);
         if (m_path.len <= 1)

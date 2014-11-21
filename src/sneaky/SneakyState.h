@@ -33,6 +33,8 @@ namespace sneaky
         bool Initialize() override;
         void CreateWorld();
 
+        void Navigate(const vec2f &start, const vec2f &end);
+
         GameObject* CreateObject(GameObject *prevLink = nullptr);
         GameObject* CreateStaticBox(const vec2f &position, float angle, float w, float h);
 
@@ -85,6 +87,10 @@ namespace sneaky
         Input m_input;
 
         Navigation m_nav;
+
+        NavPath *m_path;
+        vec2f m_pathStart, m_pathEnd;
+        bool m_drawNav;
 
         SensorListener m_sensorListener;
         FadeEffect m_fadeEffect;

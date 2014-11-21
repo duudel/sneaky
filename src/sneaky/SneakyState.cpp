@@ -61,6 +61,10 @@ namespace sneaky
         , m_objectCount(0)
         , m_input()
         , m_nav()
+        , m_path(nullptr)
+        , m_pathStart(0.0f, 0.0f)
+        , m_pathEnd(0.0f, 0.0f)
+        , m_drawNav(true)
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
@@ -68,8 +72,6 @@ namespace sneaky
         m_gameData.m_score = 0;
         m_random.Seed(GetTicks());
     }
-
-    static NavPath *path = nullptr;
 
     SneakyState::~SneakyState()
     {
@@ -79,7 +81,7 @@ namespace sneaky
         GetAudio().StopAllSounds();
         GetAudio().Update();
 
-        m_nav.ReturnNavPath(path);
+        m_nav.ReturnNavPath(m_path);
     }
 
     bool SneakyState::Initialize()
@@ -131,9 +133,12 @@ namespace sneaky
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
 
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.2f);
-        path = m_nav.ObtainNavPath();
-        m_nav.Navigate(vec2f(-PLAY_AREA_W, -PLAY_AREA_W), vec2f(PLAY_AREA_W, PLAY_AREA_W), path);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
+        m_path = m_nav.ObtainNavPath();
+        //m_nav.Navigate(vec2f(-PLAY_AREA_W, -PLAY_AREA_W), vec2f(PLAY_AREA_W, PLAY_AREA_W), m_path);
+        m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
+        m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
+        Navigate(m_pathStart, m_pathEnd);
 
 
         GameObject *pl = CreateObject(nullptr);
@@ -154,6 +159,13 @@ namespace sneaky
         PlayerBrain *plBrain = GetAllocator().new_object<PlayerBrain>(&m_input);
 
         pl->SetBrain(plBrain);
+    }
+
+    void SneakyState::Navigate(const vec2f &start, const vec2f &end)
+    {
+        m_pathStart = start;
+        m_pathEnd = end;
+        m_nav.Navigate(start, end, m_path);
     }
 
     GameObject* SneakyState::CreateObject(GameObject *prevLink /*= nullptr*/)
@@ -423,8 +435,11 @@ namespace sneaky
             m_world->DrawDebugData();
         }
 
-        m_nav.RenderMesh(&renderer);
-        m_nav.RenderPath(&renderer, path);
+        if (m_drawNav)
+        {
+            m_nav.RenderMesh(&renderer);
+            m_nav.RenderPath(&renderer, m_path);
+        }
 
         renderer.SetModel(mat4f::Identity);
         m_fadeEffect.Render(&renderer);
@@ -487,8 +502,11 @@ namespace sneaky
             if (key == Keyboard::Key::T)
             {
                 ToggleDistF();
-                ChangeState(STATE_Game);
+                Navigate(m_pathStart, m_pathEnd);
+//                ChangeState(STATE_Game);
             }
+            if (key == Keyboard::Key::G)
+                m_drawNav = !m_drawNav;
             if (key == Keyboard::Key::Tab)
                 m_drawBox2D = !m_drawBox2D;
             if (key == Keyboard::Key::Space && !IsGameOver())
@@ -554,6 +572,11 @@ namespace sneaky
     void SneakyState::OnMouseDown(MouseButton button, int x, int y)
     {
         m_mouseWorld = ScreenToWorld(m_view, x, y);
+
+        if (button == MouseButton::Left)
+            Navigate(m_mouseWorld, m_pathEnd);
+        else if (button == MouseButton::Right)
+            Navigate(m_pathStart, m_mouseWorld);
 
         if (IsGameOver())
             return;
