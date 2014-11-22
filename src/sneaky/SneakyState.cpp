@@ -2,6 +2,7 @@
 #include "SneakyState.h"
 #include "GameState.h"
 #include "Brain.h"
+#include "GuardBrain.h"
 
 #include "B2DebugDraw.h"
 
