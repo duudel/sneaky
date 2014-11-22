@@ -124,7 +124,6 @@ namespace sneaky
         CreateStaticBox(vec2f(-16.0f, PLAY_AREA_BOTTOM - 4.0f), 0.0f, 16.0f, 4.0f);
         // Left wall at the start of conveyor belt
         CreateStaticBox(vec2f(PLAY_AREA_LEFT - 18.0f, 0.0f), 0.0f, wallSize, PLAY_AREA_H / 2.0f);
-
         // Left wall
         CreateStaticBox(vec2f(PLAY_AREA_LEFT - 1.0f, 4.0f), 0.0f, wallSize, PLAY_AREA_H / 2.0f);
         // Right wall
@@ -135,7 +134,7 @@ namespace sneaky
 
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
         m_path = m_nav.ObtainNavPath();
-        //m_nav.Navigate(vec2f(-PLAY_AREA_W, -PLAY_AREA_W), vec2f(PLAY_AREA_W, PLAY_AREA_W), m_path);
+
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);

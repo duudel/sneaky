@@ -142,7 +142,7 @@ namespace sneaky
 
     private:
         bool FindNodePath(const vec2f &start, const vec2f &end, uint16_t startFace, uint16_t endFace);
-        void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path);
+        void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath);
 
     private:
         const b2World *m_world;

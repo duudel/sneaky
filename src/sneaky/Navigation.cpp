@@ -316,6 +316,43 @@ namespace sneaky
     {
         rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
 
+        NavMesh::Face sface = m_mesh.GetFace(startFace);
+        if ((sface.flags & NavMesh::FaceActive) == 0)
+        {
+            bool goodFace = false;
+            for (size_t i = 0; i < 3; i++)
+            {
+                if (sface.neighbours[i] == NavMesh::InvalidIndex) continue;
+                const NavMesh::Face &nface = m_mesh.GetFace(sface.neighbours[i]);
+                if ((nface.flags & NavMesh::FaceActive) != 0)
+                {
+                    startFace = sface.neighbours[i];
+                    goodFace = true;
+                    break;
+                }
+            }
+            if (!goodFace && sface.neighbours[2] != NavMesh::InvalidIndex)
+            {
+                sface = m_mesh.GetFace(sface.neighbours[2]);
+                if (sface.neighbours[0] != NavMesh::InvalidIndex)
+                {
+                    const NavMesh::Face &nface0 = m_mesh.GetFace(sface.neighbours[0]);
+                    if ((nface0.flags & NavMesh::FaceActive) != 0)
+                    {
+                        startFace = sface.neighbours[0];
+                    }
+                }
+                if (sface.neighbours[1] != NavMesh::InvalidIndex)
+                {
+                    const NavMesh::Face &nface1 = m_mesh.GetFace(sface.neighbours[1]);
+                    if ((nface1.flags & NavMesh::FaceActive) != 0)
+                    {
+                        startFace = sface.neighbours[1];
+                    }
+                }
+            }
+        }
+
         m_path.len = 0;
 
         const float inf = 1e6f;
@@ -332,6 +369,10 @@ namespace sneaky
 
         m_nodes[startFace].dist = 0.0f;
         vec2f prevPoint = start;
+
+        uint16_t bestFace = startFace;
+        float bestHeuristicCost = rob::Distance(start, end);
+        bool found = true;
 
         while (n > 0)
         {
@@ -351,7 +392,13 @@ namespace sneaky
             n--;
 
             if(u == endFace) break;
-            if(d > inf - 100.0f) return false;
+            if(d > inf - 100.0f)
+            {
+                // return false;
+                found = false; // Did not find full path.
+                endFace = bestFace;
+                break;
+            }
 
             for (int i = 0; i < 3; i++)
             {
@@ -363,13 +410,19 @@ namespace sneaky
                 if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
                     continue;
 
-                float alt = d + m_mesh.GetDist(u, v, i, prevPoint);
+                const float alt = d + m_mesh.GetDist(u, v, i, prevPoint);
+                const float heuristic = rob::Distance(m_mesh.GetFaceCenter(m_mesh.GetFace(v)), end);
 
                 if (alt < m_nodes[v].dist)
                 {
                     m_nodes[v].dist = alt;
                     m_nodes[v].prev = u;
                     prevPoint = m_mesh.GetEdgeCenter(u, i);
+                }
+                if (heuristic < bestHeuristicCost)
+                {
+                    bestHeuristicCost = heuristic;
+                    bestFace = v;
                 }
             }
         }
@@ -393,7 +446,7 @@ namespace sneaky
 
         rob::log::Debug("Nav: Nodes in node path: ", m_path.len);
 
-        return true;
+        return found;
     }
 
     struct PathRayCast : public b2RayCastCallback
@@ -417,7 +470,7 @@ namespace sneaky
         }
     };
 
-    void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path)
+    void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
     {
         int num = 0;
         vec2f candidates[3];
@@ -427,7 +480,7 @@ namespace sneaky
         path->Clear();
 
         path->AppendVertex(start.x, start.y);
-        if (m_path.len <= 1)
+        if (m_path.len <= 1 && fullPath)
         {
             path->AppendVertex(end.x, end.y);
             return;
@@ -468,6 +521,12 @@ namespace sneaky
             }
         }
 
+        if (!fullPath)
+        {
+            path->AppendVertex(dest.x, dest.y);
+            return;
+        }
+
         PathRayCast rayCast;
         m_world->RayCast(&rayCast, ToB2(current), ToB2(end));
         if (!rayCast.hit)
@@ -486,13 +545,16 @@ namespace sneaky
         uint16_t startFace = m_mesh.GetFaceIndex(start);
         uint16_t endFace = m_mesh.GetFaceIndex(end);
 
-        if (FindNodePath(start, end, startFace, endFace))
-        {
-            FindStraightPath(start, end, path);
-            return true;
-        }
+//        if (FindNodePath(start, end, startFace, endFace))
+//        {
+//            FindStraightPath(start, end, path);
+//            return true;
+//        }
+//        return false;
 
-        return false;
+        const bool found = FindNodePath(start, end, startFace, endFace);
+        FindStraightPath(start, end, path, found);
+        return found;
     }
 
     void Navigation::RenderMesh(rob::Renderer *renderer) const
