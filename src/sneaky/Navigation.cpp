@@ -479,7 +479,7 @@ namespace sneaky
 
         path->Clear();
 
-        path->AppendVertex(start.x, start.y);
+//        path->AppendVertex(start.x, start.y);
         if (m_path.len <= 1 && fullPath)
         {
             path->AppendVertex(end.x, end.y);
