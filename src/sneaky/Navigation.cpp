@@ -460,7 +460,7 @@ namespace sneaky
         float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) override
         {
             hit = (fixture->GetBody()->GetType() == b2_staticBody);
-            return !(hit);
+            return hit ? 0 : -1;
         }
 
         bool ShouldQueryParticleSystem(const b2ParticleSystem* particleSystem) override
@@ -555,6 +555,39 @@ namespace sneaky
         const bool found = FindNodePath(start, end, startFace, endFace);
         FindStraightPath(start, end, path, found);
         return found;
+    }
+
+    struct RayCastCb : public b2RayCastCallback
+    {
+        b2Body *body;
+        uint16_t mask;
+        uint16_t ignore;
+
+        RayCastCb(uint16_t mask, uint16_t ignore)
+            : body(nullptr), mask(mask), ignore(ignore) { }
+
+        float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) override
+        {
+            if (fixture->GetFilterData().categoryBits & mask)
+            {
+                body = fixture->GetBody();
+                return fraction;
+            }
+            if (fixture->GetFilterData().categoryBits & ignore)
+            {
+                return -1;
+            }
+            body = nullptr;
+            return 0;
+        }
+    };
+
+    b2Body *Navigation::RayCast(const vec2f &start, const vec2f &end, uint16_t mask/* = 0xffff */, uint16_t ignore/* = 0x0 */)
+    {
+        RayCastCb rayCast(mask, ignore);
+        m_world->RayCast(&rayCast, ToB2(start), ToB2(end));
+
+        return rayCast.body;
     }
 
     void Navigation::RenderMesh(rob::Renderer *renderer) const

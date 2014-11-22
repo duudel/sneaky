@@ -13,6 +13,7 @@ namespace sneaky
 
     enum
     {
+        PlayerBit = BIT(4),
         GuardBit = BIT(5),
         SensorBit = BIT(6),
         StaticBit = BIT(7),

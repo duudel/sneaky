@@ -17,10 +17,11 @@ namespace sneaky
         , m_rand(rand)
         , m_rightSensor()
         , m_leftSensor()
+        , m_visionSensor()
         , m_stuckMeter(0.0f)
         , m_prevPosition(0.0f, 0.0f)
         , m_state(State::Watch)
-        , m_stateTimer(rand.GetReal(1.0f, 3.0f))
+        , m_stateTimer()
         , m_watchTimer(0.0f)
     {
         m_path = m_nav->ObtainNavPath();
@@ -42,11 +43,55 @@ namespace sneaky
         m_leftSensor.SetBody(m_owner->GetBody());
         m_leftSensor.SetShape(&leftShape);
 
+        b2PolygonShape visionShape;
+        b2Vec2 verts[] = { b2Vec2(0.0f, 0.0f),
+            b2Vec2(7.0f, 17.0f), b2Vec2(4.0f, 23.0f), b2Vec2(-4.0f, 23.0f), b2Vec2(-7.0f, 17.0f) };
+        visionShape.Set(verts, 5);
+
+        m_visionSensor.SetBody(m_owner->GetBody());
+        m_visionSensor.SetShape(&visionShape);
+
         m_prevPosition = m_owner->GetPosition();
 //        Navigate(m_owner->GetPosition());
+
+        ChangeToWatchState();
+        m_stateTimer = m_rand.GetReal(0.0f, 4.0f);
     }
 
-    GuardBrain::State GuardBrain::UpdateWatch(const rob::GameTime &gameTime)
+    void GuardBrain::LookForPlayer()
+    {
+        if (m_visionSensor.PlayerSighted())
+        {
+            vec2f playerPos = FromB2(m_visionSensor.GetBody()->GetPosition());
+            vec2f rayOrigin = m_owner->GetPosition() + m_owner->GetForward() * 1.5f;
+            b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit/*, ignore cake*/);
+            if (body == m_visionSensor.GetBody())
+                ChangeToChaseState();
+        }
+    }
+
+    void GuardBrain::ChangeToWatchState()
+    {
+        m_owner->SetColor(Color::Yellow);
+        m_stateTimer = m_rand.GetReal(4.0f, 8.0f);
+        m_path->Clear();
+        m_state = State::Watch;
+    }
+
+    void GuardBrain::ChangeToPatrolState()
+    {
+        m_owner->SetColor(Color::Blue);
+        NavigateRandom();
+        m_state = State::Patrol;
+    }
+
+    void GuardBrain::ChangeToChaseState()
+    {
+        m_owner->SetColor(Color::Red);
+        m_state = State::Chase;
+    }
+
+    void GuardBrain::UpdateWatch(const rob::GameTime &gameTime)
     {
         b2Body *body = m_owner->GetBody();
         body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
@@ -74,14 +119,12 @@ namespace sneaky
         }
 
         if (m_stateTimer <= 0.0f)
-        {
-            NavigateRandom();
-            return State::Patrol;
-        }
-        return State::Watch;
+            ChangeToPatrolState();
+
+        LookForPlayer();
     }
 
-    GuardBrain::State GuardBrain::UpdatePatrol(const rob::GameTime &gameTime)
+    void GuardBrain::UpdatePatrol(const rob::GameTime &gameTime)
     {
         if (m_pathPos < m_path->GetLength())
         {
@@ -131,23 +174,18 @@ namespace sneaky
         }
         else
         {
-            m_stateTimer = m_rand.GetReal(2.0f, 5.0f);
-            m_path->Clear();
-            return State::Watch;
+            ChangeToWatchState();
         }
         m_prevPosition = m_owner->GetPosition();
 
         if (m_stuckMeter > 10.0f)
-        {
-            NavigateRandom();//(m_path->GetDestination());
-        }
+            NavigateRandom();
 
-        return State::Patrol;
+        LookForPlayer();
     }
 
-    GuardBrain::State GuardBrain::UpdateChase(const rob::GameTime &gameTime)
+    void GuardBrain::UpdateChase(const rob::GameTime &gameTime)
     {
-        return State::Chase;
     }
 
     void GuardBrain::Update(const rob::GameTime &gameTime)
@@ -158,15 +196,15 @@ namespace sneaky
         switch (m_state)
         {
         case State::Watch:
-            m_state = UpdateWatch(gameTime);
+            UpdateWatch(gameTime);
             break;
 
         case State::Patrol:
-            m_state = UpdatePatrol(gameTime);
+            UpdatePatrol(gameTime);
             break;
 
         case State::Chase:
-            m_state = UpdateChase(gameTime);
+            UpdateChase(gameTime);
             break;
         }
     }

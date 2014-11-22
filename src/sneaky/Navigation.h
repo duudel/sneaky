@@ -137,6 +137,8 @@ namespace sneaky
 
         bool Navigate(const vec2f &start, const vec2f &end, NavPath *path);
 
+        b2Body *RayCast(const vec2f &start, const vec2f &end, uint16_t mask = 0xffff, uint16_t ignore = 0x0);
+
         void RenderMesh(rob::Renderer *renderer) const;
         void RenderPath(rob::Renderer *renderer, const NavPath *path) const;
 

@@ -32,6 +32,11 @@ namespace sneaky
         void SetPosition(const vec2f &pos);
         vec2f GetPosition() const;
 
+        vec2f GetForward() const
+        { return FromB2(m_body->GetWorldVector(b2Vec2(0.0f, 1.0f))); }
+        vec2f GetRight() const
+        { return FromB2(m_body->GetWorldVector(b2Vec2(1.0f, 0.0f))); }
+
         void MoveLocal(const vec2f &delta);
         void MoveGlobal(const vec2f &delta);
 

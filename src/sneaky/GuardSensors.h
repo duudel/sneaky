@@ -44,6 +44,30 @@ namespace sneaky
         size_t m_guards;
     };
 
+    class GuardVisionSensor : public Sensor
+    {
+    public:
+        GuardVisionSensor()
+            : Sensor(PlayerBit, false)
+            , m_body(nullptr)
+        { }
+
+        void BeginContact(b2Fixture *fixture, void *userData) override
+        { m_body = fixture->GetBody(); }
+
+        void EndContact(b2Fixture *fixture, void *userData) override
+        { m_body = nullptr; }
+
+        bool PlayerSighted() const
+        { return m_body; }
+
+        b2Body *GetBody() const
+        { return m_body; }
+
+    private:
+        b2Body *m_body;
+    };
+
 } // sneaky
 
 #endif // H_SNEAKY_GUARD_SENSORS_H

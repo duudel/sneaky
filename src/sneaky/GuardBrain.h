@@ -3,7 +3,7 @@
 #define H_SNEAKY_GUARD_BRAIN_H
 
 #include "Brain.h"
-#include "GuardLocalSensor.h"
+#include "GuardSensors.h"
 
 #include "rob/math/Random.h"
 
@@ -29,9 +29,15 @@ namespace sneaky
         void OnInitialize() override;
 
     private:
-        State UpdateWatch(const rob::GameTime &gameTime);
-        State UpdatePatrol(const rob::GameTime &gameTime);
-        State UpdateChase(const rob::GameTime &gameTime);
+        void LookForPlayer();
+
+        void ChangeToWatchState();
+        void ChangeToPatrolState();
+        void ChangeToChaseState();
+
+        void UpdateWatch(const rob::GameTime &gameTime);
+        void UpdatePatrol(const rob::GameTime &gameTime);
+        void UpdateChase(const rob::GameTime &gameTime);
 
     public:
         void Update(const rob::GameTime &gameTime) override;
@@ -48,6 +54,7 @@ namespace sneaky
 
         GuardLocalSensor m_rightSensor;
         GuardLocalSensor m_leftSensor;
+        GuardVisionSensor m_visionSensor;
 
         float m_stuckMeter;
         vec2f m_prevPosition;
