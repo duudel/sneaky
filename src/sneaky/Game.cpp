@@ -47,7 +47,7 @@ namespace sneaky
             TextLayout layout(renderer, vp.w / 2.0f, vp.h / 3.0f);
 
             renderer.SetFontScale(4.0f);
-            layout.AddTextAlignC("Sneaky", 0.0f);
+            layout.AddTextAlignC("Chocolate Cake", 0.0f);
             layout.AddLine();
 
             renderer.SetFontScale(1.0f);
@@ -315,9 +315,9 @@ namespace sneaky
 
         m_window->SetTitle(
         #if defined(ROB_DEBUG)
-            "Sneaky - Debug"
+            "Chocolate Cake - Debug"
         #else
-            "Sneaky"
+            "Chocolate Cake"
         #endif // ROB_DEBUG
         );
 

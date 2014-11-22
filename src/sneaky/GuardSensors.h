@@ -1,6 +1,6 @@
 
-#ifndef H_SNEAKY_GUARD_LOCAL_SENSOR_H
-#define H_SNEAKY_GUARD_LOCAL_SENSOR_H
+#ifndef H_SNEAKY_GUARD_SENSORS_H
+#define H_SNEAKY_GUARD_SENSORS_H
 
 #include "Sensor.h"
 
@@ -46,5 +46,5 @@ namespace sneaky
 
 } // sneaky
 
-#endif // H_SNEAKY_GUARD_LOCAL_SENSOR_H
+#endif // H_SNEAKY_GUARD_SENSORS_H
 

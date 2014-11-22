@@ -327,7 +327,7 @@
 		<Unit filename="src/sneaky/GameState.h" />
 		<Unit filename="src/sneaky/GuardBrain.cpp" />
 		<Unit filename="src/sneaky/GuardBrain.h" />
-		<Unit filename="src/sneaky/GuardLocalSensor.h" />
+		<Unit filename="src/sneaky/GuardSensors.h" />
 		<Unit filename="src/sneaky/HighScoreList.cpp" />
 		<Unit filename="src/sneaky/HighScoreList.h" />
 		<Unit filename="src/sneaky/Input.cpp" />
