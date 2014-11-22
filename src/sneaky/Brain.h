@@ -43,10 +43,13 @@ namespace sneaky
         explicit PlayerBrain(Input *input)
             : Brain()
             , m_input(input)
+            , m_target(0.0f, 0.0f)
         { }
         void Update(const rob::GameTime &gameTime) override;
+        void DebugRender(rob::Renderer *renderer) const override;
     private:
         Input *m_input;
+        vec2f m_target;
     };
 
 } // sneaky

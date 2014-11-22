@@ -6,6 +6,7 @@
 
 #include "B2DebugDraw.h"
 
+#include "rob/application/Window.h"
 #include "rob/renderer/Renderer.h"
 #include "rob/renderer/TextLayout.h"
 #include "rob/graphics/Graphics.h"
@@ -72,6 +73,7 @@ namespace sneaky
     {
         m_gameData.m_score = 0;
         m_random.Seed(GetTicks());
+        GetWindow().GrabMouse();
     }
 
     SneakyState::~SneakyState()
@@ -81,6 +83,7 @@ namespace sneaky
         GetAllocator().del_object(m_debugDraw);
         GetAudio().StopAllSounds();
         GetAudio().Update();
+        GetWindow().UnGrabMouse();
 
         m_nav.ReturnNavPath(m_path);
     }
@@ -133,7 +136,7 @@ namespace sneaky
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
 
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W * 2.0f, 2.0f);
         m_path = m_nav.ObtainNavPath();
 
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
