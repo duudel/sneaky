@@ -29,11 +29,17 @@ namespace sneaky
         void OnInitialize() override;
 
     private:
-        void LookForPlayer();
+        bool LookForPlayer();
+        void StartChasingIfPlayerSighted();
 
         void ChangeToWatchState();
         void ChangeToPatrolState();
         void ChangeToChaseState();
+
+        void AvoidObstacles();
+        void Move(float speed, float dt);
+        bool IsStuck() const { return m_stuckMeter > 5.0f; }
+        bool IsEndOfPath() const;
 
         void UpdateWatch(const rob::GameTime &gameTime);
         void UpdatePatrol(const rob::GameTime &gameTime);
@@ -61,6 +67,7 @@ namespace sneaky
         State m_state;
         float m_stateTimer;
         float m_watchTimer;
+        vec2f m_lastKnownPlayerPos;
     };
 
 } // sneaky

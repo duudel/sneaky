@@ -23,6 +23,7 @@ namespace sneaky
         , m_state(State::Watch)
         , m_stateTimer()
         , m_watchTimer(0.0f)
+        , m_lastKnownPlayerPos()
     {
         m_path = m_nav->ObtainNavPath();
     }
@@ -58,7 +59,7 @@ namespace sneaky
         m_stateTimer = m_rand.GetReal(0.0f, 4.0f);
     }
 
-    void GuardBrain::LookForPlayer()
+    bool GuardBrain::LookForPlayer()
     {
         if (m_visionSensor.PlayerSighted())
         {
@@ -66,8 +67,18 @@ namespace sneaky
             vec2f rayOrigin = m_owner->GetPosition() + m_owner->GetForward() * 1.5f;
             b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit/*, ignore cake*/);
             if (body == m_visionSensor.GetBody())
-                ChangeToChaseState();
+            {
+                m_lastKnownPlayerPos = playerPos;
+                return true;
+            }
         }
+        return false;
+    }
+
+    void GuardBrain::StartChasingIfPlayerSighted()
+    {
+        if (LookForPlayer())
+            ChangeToChaseState();
     }
 
     void GuardBrain::ChangeToWatchState()
@@ -88,8 +99,61 @@ namespace sneaky
     void GuardBrain::ChangeToChaseState()
     {
         m_owner->SetColor(Color::Red);
+        m_stateTimer = 0.5f;
+        Navigate(m_lastKnownPlayerPos);
         m_state = State::Chase;
     }
+
+    void GuardBrain::AvoidObstacles()
+    {
+        const vec2f forward = m_owner->GetForward();
+        const vec2f right = m_owner->GetRight();
+        if (m_rightSensor.HitsObstacle() && !m_leftSensor.HitsObstacle())
+        {
+            const vec2f off = m_owner->GetPosition() - right * 1.0f + forward * 2.0f;
+            if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
+            {
+                Navigate(m_path->GetDestination());
+            }
+        }
+        else if (m_leftSensor.HitsObstacle() && !m_rightSensor.HitsObstacle())
+        {
+            const vec2f off = m_owner->GetPosition() + right * 1.0f + forward * 2.0f;
+            if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
+            {
+                Navigate(m_path->GetDestination());
+            }
+        }
+    }
+
+    void GuardBrain::Move(float speed, float dt)
+    {
+        AvoidObstacles();
+
+        const vec2f target = m_path->GetVertex(m_pathPos);
+        const vec2f delta = (target - m_owner->GetPosition());
+
+        const float dist2 = delta.Length2();
+        const float maxDist = 1.0f;
+        if (dist2 < maxDist*maxDist)
+        {
+            m_stuckMeter = 0.0f;
+            m_pathPos++;
+        }
+
+        const vec2f destDir = delta.SafeNormalized();
+        vec2f offset = destDir;
+
+        const vec2f dir = offset.SafeNormalized();
+        const vec2f velocity = dir * speed;
+        m_owner->GetBody()->SetLinearVelocity(ToB2(velocity));
+        m_owner->SetRotation(dir);
+
+        m_stuckMeter += speed * dt - rob::Distance(m_prevPosition, m_owner->GetPosition());
+    }
+
+    bool GuardBrain::IsEndOfPath() const
+    { return !(m_pathPos < m_path->GetLength()); }
 
     void GuardBrain::UpdateWatch(const rob::GameTime &gameTime)
     {
@@ -121,71 +185,46 @@ namespace sneaky
         if (m_stateTimer <= 0.0f)
             ChangeToPatrolState();
 
-        LookForPlayer();
+        StartChasingIfPlayerSighted();
     }
 
     void GuardBrain::UpdatePatrol(const rob::GameTime &gameTime)
     {
-        if (m_pathPos < m_path->GetLength())
-        {
-            vec2f target = m_path->GetVertex(m_pathPos);
-
-            const vec2f forward = FromB2(m_owner->GetBody()->GetWorldVector(b2Vec2(0.0f, 1.0f)));
-            const vec2f right = FromB2(m_owner->GetBody()->GetWorldVector(b2Vec2(1.0f, 0.0f)));
-            if (m_rightSensor.HitsObstacle() && !m_leftSensor.HitsObstacle())
-            {
-                const vec2f off = m_owner->GetPosition() - right * 1.0f + forward * 2.0f;
-                if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
-                {
-                    Navigate(m_path->GetDestination());
-                }
-            }
-            else if (m_leftSensor.HitsObstacle() && !m_rightSensor.HitsObstacle())
-            {
-                const vec2f off = m_owner->GetPosition() + right * 1.0f + forward * 2.0f;
-                if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
-                {
-                    Navigate(m_path->GetDestination());
-                }
-            }
-
-            target = m_path->GetVertex(m_pathPos);
-            const vec2f delta = (target - m_owner->GetPosition());
-
-            const float dist2 = delta.Length2();
-            const float maxDist = 1.0f;
-            if (dist2 < maxDist*maxDist)
-            {
-                m_stuckMeter = 0.0f;
-                m_pathPos++;
-            }
-
-            const vec2f destDir = delta.SafeNormalized();
-            vec2f offset = destDir;
-
-            const float speed = 5.0f;
-            const vec2f dir = offset.SafeNormalized();
-            const vec2f velocity = dir * speed;
-            m_owner->GetBody()->SetLinearVelocity(ToB2(velocity));
-            m_owner->SetRotation(dir);
-
-            const float dt = gameTime.GetDeltaSeconds();
-            m_stuckMeter += speed * dt - rob::Distance(m_prevPosition, m_owner->GetPosition());
-        }
+        if (IsEndOfPath())
+            ChangeToWatchState();
         else
         {
-            ChangeToWatchState();
+            Move(4.0f, gameTime.GetDeltaSeconds());
+            if (IsStuck())
+                NavigateRandom();
         }
         m_prevPosition = m_owner->GetPosition();
 
-        if (m_stuckMeter > 10.0f)
-            NavigateRandom();
-
-        LookForPlayer();
+        StartChasingIfPlayerSighted();
     }
 
     void GuardBrain::UpdateChase(const rob::GameTime &gameTime)
     {
+        LookForPlayer();
+        if (m_stateTimer <= 0.0f)
+        {
+            Navigate(m_lastKnownPlayerPos);
+            m_stateTimer = 0.5f;
+        }
+
+        if (IsEndOfPath())
+        {
+            Navigate(m_lastKnownPlayerPos);
+            Move(8.0f, gameTime.GetDeltaSeconds());
+            if (IsEndOfPath())
+                ChangeToWatchState();
+        }
+        else
+        {
+            Move(8.0f, gameTime.GetDeltaSeconds());
+            if (IsStuck())
+                Navigate(m_lastKnownPlayerPos);
+        }
     }
 
     void GuardBrain::Update(const rob::GameTime &gameTime)

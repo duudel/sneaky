@@ -37,7 +37,12 @@ namespace sneaky
         }
         offset.SafeNormalize();
 
-        const float speed = 5.0f;
+        float speed = 4.0f;
+        if (m_input->KeyDown(Keyboard::Scancode::LShift))
+        {
+            speed = 8.0f;
+        }
+
         const vec2f velocity = offset * speed; // * dt;
 //        m_owner->MoveLocal(velocity);
         const vec2f globalVel = FromB2(m_owner->GetBody()->GetWorldVector(ToB2(velocity)));

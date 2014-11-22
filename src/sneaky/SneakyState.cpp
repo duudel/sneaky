@@ -25,7 +25,7 @@ namespace sneaky
     static const float PLAY_AREA_BOTTOM = -PLAY_AREA_H / 2.0f;
     static const float PLAY_AREA_TOP    = -PLAY_AREA_BOTTOM;
 
-    float g_zoom = 1.0f;
+    float g_zoom = 3.0f;
 
     struct Rect
     {
@@ -65,7 +65,7 @@ namespace sneaky
         , m_path(nullptr)
         , m_pathStart(0.0f, 0.0f)
         , m_pathEnd(0.0f, 0.0f)
-        , m_drawNav(true)
+        , m_drawNav(false)
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
