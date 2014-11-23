@@ -54,6 +54,7 @@ namespace sneaky
             layout.AddLine();
 
             renderer.SetFontScale(1.0f);
+            layout.AddLine();
             layout.AddTextAlignR("[space]", -20.0f);
             layout.AddTextAlignL("- New game", 10.0f);
             layout.AddLine();

@@ -24,6 +24,7 @@ namespace rob
     class Mouse;
 
     void GetMouseState(Mouse &mouse);
+    void ResetMouseState(Mouse &mouse);
 
     class Mouse
     {
@@ -34,6 +35,7 @@ namespace rob
 
     private:
         friend void GetMouseState(Mouse &mouse);
+        friend void ResetMouseState(Mouse &mouse);
 
         void SetButtons(const uint32_t buttons);
         void SetPosition(int x, int y, int dx, int dy);

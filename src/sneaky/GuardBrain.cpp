@@ -3,14 +3,16 @@
 #include "Physics.h"
 #include "GameObject.h"
 #include "Navigation.h"
+#include "SneakyState.h"
 
 #include "rob/application/GameTime.h"
 
 namespace sneaky
 {
 
-    GuardBrain::GuardBrain(Navigation *nav, rob::Random &rand)
+    GuardBrain::GuardBrain(SneakyState *game, Navigation *nav, rob::Random &rand)
         : Brain()
+        , m_game(game)
         , m_nav(nav)
         , m_path(nullptr)
         , m_pathPos(0)
@@ -205,6 +207,12 @@ namespace sneaky
 
     void GuardBrain::UpdateChase(const rob::GameTime &gameTime)
     {
+        if (m_visionSensor.PlayerSighted())
+        {
+            if (rob::Distance(m_owner->GetPosition(), FromB2(m_visionSensor.GetBody()->GetPosition())) < 2.5f)
+                m_game->PlayerCaught();
+        }
+
         LookForPlayer();
         if (m_stateTimer <= 0.0f)
         {

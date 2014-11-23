@@ -18,17 +18,26 @@ namespace sneaky
     class Input
     {
     public:
+        Input()
+            : m_enabled(true)
+        {
+            memset(m_keys, 0, sizeof(m_keys));
+        }
+
         void SetView(const View *view)
         { m_view = view; }
+
+        void SetEnabled(bool enabled)
+        { m_enabled = enabled; if (!enabled) ResetMouseState(m_mouse); }
 
         void SetKey(Keyboard::Scancode key, bool down)
         { m_keys[static_cast<size_t>(key)] = down; }
 
         bool KeyDown(Keyboard::Scancode key) const
-        { return m_keys[static_cast<size_t>(key)]; }
+        { return m_keys[static_cast<size_t>(key)] && m_enabled; }
 
         void UpdateMouse()
-        { GetMouseState(m_mouse); }
+        { if (m_enabled) GetMouseState(m_mouse); }
 
         bool ButtonDown(MouseButton button) const
         { return m_mouse.ButtonDown(button); }
@@ -44,6 +53,7 @@ namespace sneaky
     private:
         bool m_keys[static_cast<size_t>(Keyboard::Scancode::NUM_KEYS)];
         Mouse m_mouse;
+        bool m_enabled;
 
         const View *m_view;
     };

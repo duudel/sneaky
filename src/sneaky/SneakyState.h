@@ -46,6 +46,7 @@ namespace sneaky
         void DestroySingleObject(GameObject *object);
         void DestroyAllObjects();
 
+        void PlayerCaught();
         bool IsGameOver() const;
 
         void RecalcProj();
@@ -75,6 +76,7 @@ namespace sneaky
         bool m_drawBox2D;
 
         bool m_inUpdate;
+        bool m_gameOver;
 
         b2Body *m_worldBody;
 

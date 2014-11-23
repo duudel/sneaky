@@ -14,7 +14,7 @@
 namespace rob
 {
 
-    static const size_t STATIC_MEMORY_SIZE = 4 * 1024 * 1024;
+    static const size_t STATIC_MEMORY_SIZE = 8 * 1024 * 1024;
 
     Game::Game()
         : m_staticAlloc(STATIC_MEMORY_SIZE)

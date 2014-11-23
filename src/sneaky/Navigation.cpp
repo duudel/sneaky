@@ -138,7 +138,7 @@ namespace sneaky
         return m_vertices[index];
     }
 
-    uint16_t NavMesh::GetFaceIndex(const vec2f &v) const
+    index_t NavMesh::GetFaceIndex(const vec2f &v) const
     {
         const int gridW = (m_halfSize * 2.0f) / m_gridSz;
         const vec2f p = v + vec2f(m_halfSize);
@@ -160,7 +160,7 @@ namespace sneaky
         return vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
     }
 
-    vec2f NavMesh::GetEdgeCenter(uint16_t f, int edge) const
+    vec2f NavMesh::GetEdgeCenter(index_t f, int edge) const
     {
         const Face &face = GetFace(f);
         const NavMesh::Vert &v0 = GetVertex(face.vertices[edge]);
@@ -168,21 +168,11 @@ namespace sneaky
         return vec2f(v0.x + v1.x, v0.y + v1.y) / 2.0f;
     }
 
-    bool g_distF = true;
-    void ToggleDistF() { g_distF = !g_distF; }
-
-    float NavMesh::GetDist(uint16_t fi0, uint16_t fi1, int neighborIndex, const vec2f &prevPoint) const
+    float NavMesh::GetDist(index_t fi0, index_t fi1) const
     {
-        if (g_distF)
-        {
-            const Face &f0 = m_faces[fi0];
-            const Face &f1 = m_faces[fi1];
-            return (GetFaceCenter(f0) - GetFaceCenter(f1)).Length();
-        }
-
-        const vec2f e0 = GetEdgeCenter(fi0, neighborIndex);
-        return rob::Sqrt((e0 - prevPoint).Length2() + (GetFaceCenter(m_faces[fi1]) - e0).Length2()); // * 0.5f;
-//        return (e0 - prevPoint).Length() + (GetFaceCenter(m_faces[fi1]) - e0).Length() * 0.5f;
+        const Face &f0 = m_faces[fi0];
+        const Face &f1 = m_faces[fi1];
+        return (GetFaceCenter(f0) - GetFaceCenter(f1)).Length();
     }
 
     bool NavMesh::TestPoint(const b2World *world, float x, float y)
@@ -204,13 +194,13 @@ namespace sneaky
         v.y = y;
         v.flags = 0;
         v.flags |= active ? VertActive : 0x0;
-        for (size_t i = 0; i < 8; i++) v.faces[i] = InvalidIndex;
+//        for (size_t i = 0; i < 8; i++) v.faces[i] = InvalidIndex;
     }
 
-    uint16_t NavMesh::AddFace(uint16_t i0, uint16_t i1, uint16_t i2, bool active)
+    index_t NavMesh::AddFace(index_t i0, index_t i1, index_t i2, bool active)
     {
         ROB_ASSERT(m_faceCount < MAX_FACES);
-        const uint16_t faceI = m_faceCount++;
+        const index_t faceI = m_faceCount++;
         Face &f = m_faces[faceI];
         f.vertices[0] = i0;
         f.vertices[1] = i1;
@@ -368,9 +358,8 @@ namespace sneaky
         }
 
         m_nodes[startFace].dist = 0.0f;
-        vec2f prevPoint = start;
 
-        uint16_t bestFace = startFace;
+        index_t bestFace = startFace;
         float bestHeuristicCost = rob::Distance(start, end);
         bool found = true;
 
@@ -402,7 +391,7 @@ namespace sneaky
 
             for (int i = 0; i < 3; i++)
             {
-                int v = m_mesh.GetFace(u).neighbours[i];
+                index_t v = m_mesh.GetFace(u).neighbours[i];
                 if (v == NavMesh::InvalidIndex)
                     continue;
                 if (m_nodes[v].closed) // TODO: This is bad if the navmesh is not a grid (maybe)
@@ -410,14 +399,13 @@ namespace sneaky
                 if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
                     continue;
 
-                const float alt = d + m_mesh.GetDist(u, v, i, prevPoint);
+                const float alt = d + m_mesh.GetDist(u, v);
                 const float heuristic = rob::Distance(m_mesh.GetFaceCenter(m_mesh.GetFace(v)), end);
 
                 if (alt < m_nodes[v].dist)
                 {
                     m_nodes[v].dist = alt;
                     m_nodes[v].prev = u;
-                    prevPoint = m_mesh.GetEdgeCenter(u, i);
                 }
                 if (heuristic < bestHeuristicCost)
                 {
@@ -427,7 +415,7 @@ namespace sneaky
             }
         }
 
-        int v = endFace;
+        index_t v = endFace;
         while (m_nodes[v].prev != NavMesh::InvalidIndex)
         {
             v = m_nodes[v].prev;
@@ -437,7 +425,7 @@ namespace sneaky
         if (m_path.len > MAX_PATH_LEN)
             return false;
 
-        int u = endFace;
+        index_t u = endFace;
         for (int i = m_path.len - 1; i >= 0; i--)
         {
             m_path.path[i] = u;
@@ -486,7 +474,7 @@ namespace sneaky
             return;
         }
 
-        for (int i = 0; i < m_path.len; i++)
+        for (size_t i = 0; i < m_path.len; i++)
         {
             const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
 
@@ -542,8 +530,8 @@ namespace sneaky
 
     bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
     {
-        uint16_t startFace = m_mesh.GetFaceIndex(start);
-        uint16_t endFace = m_mesh.GetFaceIndex(end);
+        index_t startFace = m_mesh.GetFaceIndex(start);
+        index_t endFace = m_mesh.GetFaceIndex(end);
 
 //        if (FindNodePath(start, end, startFace, endFace))
 //        {

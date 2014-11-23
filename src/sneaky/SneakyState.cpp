@@ -19,14 +19,14 @@ namespace sneaky
 
     using namespace rob;
 
-    static const float PLAY_AREA_W      = 24.0f;
+    static const float PLAY_AREA_W      = 72.0f;
     static const float PLAY_AREA_H      = PLAY_AREA_W * 0.75f;
     static const float PLAY_AREA_LEFT   = -PLAY_AREA_W / 2.0f;
     static const float PLAY_AREA_RIGHT  = -PLAY_AREA_LEFT;
     static const float PLAY_AREA_BOTTOM = -PLAY_AREA_H / 2.0f;
     static const float PLAY_AREA_TOP    = -PLAY_AREA_BOTTOM;
 
-    float g_zoom = 3.0f;
+    float g_zoom = 1.0f;
 
     struct Rect
     {
@@ -55,6 +55,7 @@ namespace sneaky
         , m_debugDraw(nullptr)
         , m_drawBox2D(false)
         , m_inUpdate(false)
+        , m_gameOver(false)
         , m_worldBody(nullptr)
         , m_mouseJoint(nullptr)
         , m_mouseWorld(0.0f, 0.0f)
@@ -136,7 +137,7 @@ namespace sneaky
         CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
 
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W * 2.0f, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
         m_path = m_nav.ObtainNavPath();
 
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
@@ -234,7 +235,7 @@ namespace sneaky
         fixDef.filter.categoryBits = GuardBit;
         body->CreateFixture(&fixDef);
 
-        Brain *brain = GetAllocator().new_object<GuardBrain>(&m_nav, m_random);
+        Brain *brain = GetAllocator().new_object<GuardBrain>(this, &m_nav, m_random);
 
         guard->SetBrain(brain);
         return guard;
@@ -296,10 +297,15 @@ namespace sneaky
         m_objectCount = 0;
     }
 
+    void SneakyState::PlayerCaught()
+    {
+        m_gameOver = true;
+        m_input.SetEnabled(false);
+    }
 
     bool SneakyState::IsGameOver() const
     {
-        return false; // TODO: fix
+        return m_gameOver;
     }
 
     void SneakyState::RecalcProj()
@@ -388,9 +394,9 @@ namespace sneaky
         TextLayout layout(renderer, vp.w / 2.0f, vp.h / 3.0f);
 
         renderer.SetFontScale(4.0f);
-//        layout.AddTextAlignC("Game over", 0.0f);
-//        layout.AddLine();
-//        renderer.SetFontScale(2.0f);
+        layout.AddTextAlignC("Game over", 0.0f);
+        layout.AddLine();
+        renderer.SetFontScale(2.0f);
 
 //        int r = 128 + rand() % 128;
 //        int g = rand() % 255; // TODO: use rob/math/Random
@@ -398,7 +404,8 @@ namespace sneaky
 //        float gg = g / 255.0f;
 
         renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-        layout.AddTextAlignC("You are DEAD!", 0.0f);
+        layout.AddTextAlignC("You were caught by the guards.", 0.0f);
+        layout.AddLine();
         layout.AddLine();
 
         renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
@@ -482,9 +489,9 @@ namespace sneaky
         renderer.SetModel(mat4f::Identity);
         m_fadeEffect.Render(&renderer);
 
-//        renderer.SetView(GetDefaultView());
-//        renderer.BindFontShader();
-//        renderer.SetColor(Color::White);
+        renderer.SetView(GetDefaultView());
+        renderer.BindFontShader();
+        renderer.SetColor(Color::White);
 
         if (IsGameOver())
             RenderGameOver();
@@ -537,12 +544,6 @@ namespace sneaky
 
         // TODO: These are for debugging
         {
-            if (key == Keyboard::Key::T)
-            {
-                ToggleDistF();
-                Navigate(m_pathStart, m_pathEnd);
-//                ChangeState(STATE_Game);
-            }
             if (key == Keyboard::Key::G)
                 m_drawNav = !m_drawNav;
             if (key == Keyboard::Key::Tab)

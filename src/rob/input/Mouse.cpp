@@ -40,4 +40,11 @@ namespace rob
         mouse.SetButtons(buttons);
     }
 
+    void ResetMouseState(Mouse &mouse)
+    {
+        const vec2f mpos = mouse.GetPosition();
+        mouse.SetPosition(mpos.x, mpos.y, 0, 0);
+        mouse.SetButtons(0);
+    }
+
 } // rob

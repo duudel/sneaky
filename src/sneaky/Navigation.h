@@ -13,11 +13,12 @@ namespace rob
 
 namespace sneaky
 {
+    typedef uint32_t index_t;
 
     class NavMesh
     {
     public:
-        static const uint16_t InvalidIndex = -1;
+        static const index_t InvalidIndex = -1;
 
         enum FaceBits
         {
@@ -26,8 +27,8 @@ namespace sneaky
 
         struct Face
         {
-            uint16_t vertices[3];
-            uint16_t neighbours[3];
+            index_t vertices[3];
+            index_t neighbours[3];
             uint32_t flags;
         };
 
@@ -40,11 +41,11 @@ namespace sneaky
         {
             float x, y;
             uint32_t flags;
-            uint16_t faces[8];
+            //index_t faces[8];
         };
 
-        static const uint16_t MAX_FACES = 1024*24;
-        static const uint16_t MAX_VERTICES = 1024*32;
+        static const index_t MAX_FACES = 1024*64;
+        static const index_t MAX_VERTICES = 1024*64;
     public:
         NavMesh();
         ~NavMesh();
@@ -58,16 +59,16 @@ namespace sneaky
         size_t GetVertexCount() const;
         const Vert& GetVertex(size_t index) const;
 
-        uint16_t GetFaceIndex(const vec2f &v) const;
+        index_t GetFaceIndex(const vec2f &v) const;
 
         vec2f GetFaceCenter(const Face &f) const;
-        vec2f GetEdgeCenter(uint16_t f, int edge) const;
-        float GetDist(uint16_t f0, uint16_t f1, int neighborIndex, const vec2f &prevPoint) const;
+        vec2f GetEdgeCenter(index_t f, int edge) const;
+        float GetDist(index_t f0, index_t f1) const;
 
     private:
         static bool TestPoint(const b2World *world, float x, float y);
         void AddVertex(float x, float y, bool active);
-        uint16_t AddFace(uint16_t i0, uint16_t i1, uint16_t i2, bool active);
+        index_t AddFace(index_t i0, index_t i1, index_t i2, bool active);
 
     private:
         size_t m_faceCount;
@@ -82,7 +83,7 @@ namespace sneaky
 
     void ToggleDistF();
 
-    constexpr uint16_t MAX_PATH_LEN = 256;
+    constexpr size_t MAX_PATH_LEN = 256;
 
     class NavPath
     {
@@ -113,8 +114,8 @@ namespace sneaky
     {
         struct NodePath
         {
-            uint16_t len;
-            uint16_t path[MAX_PATH_LEN];
+            size_t len;
+            index_t path[MAX_PATH_LEN];
 
             NodePath() : len(0) { }
         };
@@ -122,7 +123,7 @@ namespace sneaky
         struct Node
         {
             float dist;
-            int prev;
+            index_t prev;
             bool closed;
         };
 

@@ -23,7 +23,7 @@ namespace sneaky
         };
 
     public:
-        explicit GuardBrain(Navigation *nav, rob::Random &rand);
+        explicit GuardBrain(SneakyState *game, Navigation *nav, rob::Random &rand);
         ~GuardBrain();
 
         void OnInitialize() override;
@@ -53,6 +53,7 @@ namespace sneaky
         void NavigateRandom();
 
     private:
+        SneakyState *m_game;
         Navigation *m_nav;
         NavPath *m_path;
         size_t m_pathPos;
