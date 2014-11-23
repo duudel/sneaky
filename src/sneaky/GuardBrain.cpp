@@ -65,9 +65,10 @@ namespace sneaky
     {
         if (m_visionSensor.PlayerSighted())
         {
+            m_owner->SetColor(Color::Orange);
             vec2f playerPos = FromB2(m_visionSensor.GetBody()->GetPosition());
             vec2f rayOrigin = m_owner->GetPosition() + m_owner->GetForward() * 1.5f;
-            b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit/*, ignore cake*/);
+            b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit/*, GuardBit|CakeBit*/);
             if (body == m_visionSensor.GetBody())
             {
                 m_lastKnownPlayerPos = playerPos;
@@ -187,6 +188,8 @@ namespace sneaky
         if (m_stateTimer <= 0.0f)
             ChangeToPatrolState();
 
+        m_owner->SetColor(Color::Yellow);
+
         StartChasingIfPlayerSighted();
     }
 
@@ -202,6 +205,8 @@ namespace sneaky
         }
         m_prevPosition = m_owner->GetPosition();
 
+        m_owner->SetColor(Color::Blue);
+
         StartChasingIfPlayerSighted();
     }
 
@@ -214,6 +219,9 @@ namespace sneaky
         }
 
         LookForPlayer();
+
+        m_owner->SetColor(Color::Red);
+
         if (m_stateTimer <= 0.0f)
         {
             Navigate(m_lastKnownPlayerPos);

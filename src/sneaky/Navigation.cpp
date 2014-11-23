@@ -1,5 +1,6 @@
 
 #include "Navigation.h"
+#include "Sensor.h"
 
 #include "rob/memory/LinearAllocator.h"
 #include "rob/renderer/Renderer.h"
@@ -89,15 +90,21 @@ namespace sneaky
                 Vert& v2 = m_vertices[i2];
                 Vert& v3 = m_vertices[i3];
 
-                bool faceActive = (v0.flags & v1.flags & v2.flags & v3.flags & VertActive);
-                if (faceActive)
+                bool face0Active = (v0.flags & v1.flags & v2.flags & VertActive);
+                bool face1Active = (v0.flags & v2.flags & v3.flags & VertActive);
+                if (face0Active)
                 {
                     const vec2f c = vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
-                    faceActive &= !TestPoint(world, c.x, c.y);
+                    face0Active &= !TestPoint(world, c.x, c.y);
+                }
+                if (face1Active)
+                {
+                    const vec2f c = vec2f(v0.x + v2.x + v3.x, v0.y + v2.y + v3.y) / 3.0f;
+                    face1Active &= !TestPoint(world, c.x, c.y);
                 }
 
-                const index_t fi0 = AddFace(i0, i1, i2, faceActive);
-                const index_t fi1 = AddFace(i2, i3, i0, faceActive);
+                const index_t fi0 = AddFace(i0, i1, i2, face0Active);
+                const index_t fi1 = AddFace(i2, i3, i0, face1Active);
 
                 const index_t fi = (y * sideFacesX + x) * 2;
 
@@ -552,25 +559,37 @@ namespace sneaky
     struct RayCastCb : public b2RayCastCallback
     {
         b2Body *body;
+        //float32 fraction;
         uint16_t mask;
         uint16_t ignore;
 
         RayCastCb(uint16_t mask, uint16_t ignore)
-            : body(nullptr), mask(mask), ignore(ignore) { }
+            : body(nullptr), /*fraction(1e6),*/ mask(mask), ignore(ignore|SensorBit) { }
 
         float32 ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction) override
         {
+            if ((fixture->GetFilterData().categoryBits & ignore) == 0)
+                body = fixture->GetBody();
+            else return 1;
+            return fraction;
+
             if (fixture->GetFilterData().categoryBits & mask)
             {
                 body = fixture->GetBody();
+                return 0;
+                //this->fraction = fraction;
                 return fraction;
             }
             if (fixture->GetFilterData().categoryBits & ignore)
             {
                 return -1;
             }
-            body = nullptr;
-            return 0;
+            //if (body && fraction < this->fraction)
+            //{
+                body = nullptr;
+                return 0;
+            //}
+            //return 1;
         }
     };
 

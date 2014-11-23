@@ -55,8 +55,8 @@ namespace sneaky
         , m_debugDraw(nullptr)
         , m_drawBox2D(false)
         , m_inUpdate(false)
+        , m_gameWon(false)
         , m_gameOver(false)
-        , m_worldBody(nullptr)
         , m_mouseJoint(nullptr)
         , m_mouseWorld(0.0f, 0.0f)
         , m_objectPool()
@@ -105,13 +105,7 @@ namespace sneaky
 
         m_world = GetAllocator().new_object<b2World>(b2Vec2(0.0f, 0.0f));
         m_world->SetDebugDraw(m_debugDraw);
-
         m_world->SetContactListener(&m_sensorListener);
-
-        b2BodyDef wbodyDef;
-        wbodyDef.type = b2_staticBody;
-        wbodyDef.position.Set(0.0f, PLAY_AREA_BOTTOM - 2.0f);
-        m_worldBody = m_world->CreateBody(&wbodyDef);
 
         m_sounds.Init(GetAudio(), GetCache());
 
@@ -210,9 +204,11 @@ namespace sneaky
         fixDef.filter.categoryBits = PlayerBit;
         plBody->CreateFixture(&fixDef);
 
-        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(&m_input);
+        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
 
         pl->SetBrain(brain);
+
+        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
@@ -284,6 +280,32 @@ namespace sneaky
         return guard;
     }
 
+    GameObject *SneakyState::CreateCake(const vec2f &position)
+    {
+        GameObject *cake = CreateObject(nullptr);
+
+        b2BodyDef bodyDef;
+        bodyDef.type = b2_kinematicBody;
+//        bodyDef.type = b2_dynamicBody;
+        bodyDef.userData = cake;
+        bodyDef.position = ToB2(position);
+        b2Body *body = m_world->CreateBody(&bodyDef);
+
+        cake->SetBody(body);
+        cake->SetTexture(GetCache().GetTexture("cake.tex"));
+//        cake->SetColor(Color(0.5f, 0.2f, 0.0f));
+
+        b2CircleShape shape;
+        shape.m_radius = 1.5f;
+        b2FixtureDef fixDef;
+        fixDef.shape = &shape;
+        fixDef.density = 1.0f;
+        fixDef.filter.categoryBits = CakeBit;
+        body->CreateFixture(&fixDef);
+
+        return cake;
+    }
+
     void SneakyState::DestroyObject(GameObject *object)
     {
         if (m_inUpdate)
@@ -309,11 +331,6 @@ namespace sneaky
                     m_objects[m_objectCount - 1] : nullptr;
                 m_objectCount--;
 
-                if (m_mouseJoint && object->GetBody() == m_mouseJoint->GetBodyB())
-                {
-                    DestroyMouseJoint();
-                }
-
                 m_world->DestroyBody(object->GetBody());
                 m_objectPool.Return(object);
                 return;
@@ -338,6 +355,16 @@ namespace sneaky
             m_objects[i] = nullptr;
         }
         m_objectCount = 0;
+    }
+
+    void SneakyState::CakeEaten()
+    {
+        if (m_gameOver) return;
+
+        DestroyObject(m_cake);
+        m_gameOver = true;
+        m_gameWon = true;
+        m_input.SetEnabled(false);
     }
 
     void SneakyState::PlayerCaught()
@@ -387,15 +414,6 @@ namespace sneaky
         m_fadeEffect.Update(deltaTime);
     }
 
-    void SneakyState::DestroyMouseJoint()
-    {
-        if (m_mouseJoint)
-        {
-            m_world->DestroyJoint(m_mouseJoint);
-            m_mouseJoint = nullptr;
-        }
-    }
-
     void SneakyState::Update(const GameTime &gameTime)
     {
         m_inUpdate = true;
@@ -404,8 +422,6 @@ namespace sneaky
         m_input.UpdateMouse();
         m_sounds.UpdateTime(gameTime);
 
-        if (IsGameOver() && m_mouseJoint)
-            DestroyMouseJoint();
         if (IsGameOver())
         {
             m_fadeEffect.Activate(0.5f);
@@ -436,6 +452,31 @@ namespace sneaky
         m_inUpdate = false;
     }
 
+    void SneakyState::RenderGameWon()
+    {
+        Renderer &renderer = GetRenderer();
+        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
+        renderer.BindFontShader();
+
+        const Viewport vp = renderer.GetView().m_viewport;
+
+        TextLayout layout(renderer, vp.w / 2.0f, vp.h / 3.0f);
+
+        renderer.SetFontScale(4.0f);
+        layout.AddTextAlignC("Congratulations!", 0.0f);
+        layout.AddLine();
+        renderer.SetFontScale(2.0f);
+
+        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
+        layout.AddTextAlignC("You ate the cake and it was tasty.", 0.0f);
+        layout.AddLine();
+        layout.AddLine();
+
+        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
+        renderer.SetFontScale(1.0f);
+        layout.AddTextAlignC("Press [space] to continue", 0.0f);
+    }
+
     void SneakyState::RenderGameOver()
     {
         Renderer &renderer = GetRenderer();
@@ -450,11 +491,6 @@ namespace sneaky
         layout.AddTextAlignC("Game over", 0.0f);
         layout.AddLine();
         renderer.SetFontScale(2.0f);
-
-//        int r = 128 + rand() % 128;
-//        int g = rand() % 255; // TODO: use rob/math/Random
-//        float rr = r / 255.0f;
-//        float gg = g / 255.0f;
 
         renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
         layout.AddTextAlignC("You were caught by the guards.", 0.0f);
@@ -546,7 +582,9 @@ namespace sneaky
         renderer.BindFontShader();
         renderer.SetColor(Color::White);
 
-        if (IsGameOver())
+        if (m_gameWon)
+            RenderGameWon();
+        else if (IsGameOver())
             RenderGameOver();
     }
 
@@ -669,45 +707,6 @@ namespace sneaky
             Navigate(m_mouseWorld, m_pathEnd);
         else if (button == MouseButton::Right)
             Navigate(m_pathStart, m_mouseWorld);
-
-        if (IsGameOver())
-            return;
-        if (!g_playArea.IsInside(m_mouseWorld))
-            return;
-
-        if (m_mouseJoint != nullptr)
-            return;
-
-        // Make a small box.
-        b2AABB aabb;
-        b2Vec2 d(0.001f, 0.001f);
-        b2Vec2 p = ToB2(m_mouseWorld);
-        aabb.lowerBound = p - d;
-        aabb.upperBound = p + d;
-
-        // Query the world for overlapping shapes.
-        QueryCallback callback(p);
-        m_world->QueryAABB(&callback, aabb);
-
-        if (callback.m_fixture)
-        {
-            const float force = 1000.0f;
-
-            b2Body* body = callback.m_fixture->GetBody();
-            b2MouseJointDef md;
-            md.bodyA = m_worldBody;
-            md.bodyB = body;
-            md.target = p;
-            md.maxForce = force * body->GetMass();
-            md.dampingRatio = 0.98f * force / 1000.0f; // TODO: not sure if this does anything good.
-            m_mouseJoint = (b2MouseJoint*)m_world->CreateJoint(&md);
-            body->SetAwake(true);
-        }
-    }
-
-    void SneakyState::OnMouseUp(MouseButton button, int x, int y)
-    {
-        DestroyMouseJoint();
     }
 
 } // duck

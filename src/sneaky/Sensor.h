@@ -17,6 +17,7 @@ namespace sneaky
         GuardBit = BIT(5),
         SensorBit = BIT(6),
         StaticBit = BIT(7),
+        CakeBit = BIT(8),
         AllBits = 0xffff
     };
 

@@ -38,6 +38,7 @@ namespace sneaky
         GameObject* CreateObject(GameObject *prevLink = nullptr);
         GameObject* CreateStaticBox(const vec2f &position, float angle, float w, float h);
         GameObject* CreateGuard(const vec2f &position);
+        GameObject* CreateCake(const vec2f &position);
 
         void DestroyObject(GameObject *object);
         void DestroyLinkedObjects(GameObject *object);
@@ -46,6 +47,7 @@ namespace sneaky
         void DestroySingleObject(GameObject *object);
         void DestroyAllObjects();
 
+        void CakeEaten();
         void PlayerCaught();
         bool IsGameOver() const;
 
@@ -54,9 +56,8 @@ namespace sneaky
 
         void RealtimeUpdate(const Time_t deltaMicroseconds) override;
 
-        void DestroyMouseJoint();
-
         void Update(const GameTime &gameTime) override;
+        void RenderGameWon();
         void RenderGameOver();
         void RenderParticleSystem(b2ParticleSystem *ps);
         void Render() override;
@@ -66,7 +67,6 @@ namespace sneaky
 
         void OnKeyPress(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods) override;
         void OnMouseDown(rob::MouseButton button, int x, int y) override;
-        void OnMouseUp(rob::MouseButton button, int x, int y) override;
 
     private:
         GameData &m_gameData;
@@ -76,9 +76,8 @@ namespace sneaky
         bool m_drawBox2D;
 
         bool m_inUpdate;
+        bool m_gameWon;
         bool m_gameOver;
-
-        b2Body *m_worldBody;
 
         b2MouseJoint *m_mouseJoint;
         vec2f m_mouseWorld;
@@ -86,6 +85,8 @@ namespace sneaky
         rob::Pool<GameObject> m_objectPool;
         GameObject **m_objects;
         size_t m_objectCount;
+
+        GameObject *m_cake;
 
         Input m_input;
 

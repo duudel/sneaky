@@ -3,6 +3,7 @@
 #include "Physics.h"
 #include "Input.h"
 #include "GameObject.h"
+#include "SneakyState.h"
 
 #include "rob/application/GameTime.h"
 #include "rob/renderer/Renderer.h"
@@ -10,11 +11,18 @@
 namespace sneaky
 {
 
+    void PlayerBrain::OnInitialize()
+    {
+        b2CircleShape shape;
+        shape.m_radius = 1.1f;
+        m_cakeSensor.SetBody(m_owner->GetBody());
+        m_cakeSensor.SetShape(&shape);
+    }
+
     void PlayerBrain::Update(const rob::GameTime &gameTime)
     {
-//        const float dt = gameTime.GetDeltaSeconds();
-//        const vec2f target = m_input->GetMouseWorldPosition();
-//        const vec2f dir = (target - m_owner->GetPosition()).Normalized();
+        if (m_cakeSensor.HitsCake())
+            m_game->CakeEaten();
 
         m_target += m_input->GetMouseDelta() * vec2f(1.0f, -1.0f) * 0.1f;
         ClampVectorLength(m_target, 10.0f);
