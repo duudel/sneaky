@@ -48,7 +48,7 @@ namespace sneaky
         void DestroyAllObjects();
 
         void CakeEaten();
-        void PlayerCaught();
+        void PlayerCaught(const vec2f &pos);
         bool IsGameOver() const;
 
         void RecalcProj();
@@ -57,8 +57,7 @@ namespace sneaky
         void RealtimeUpdate(const Time_t deltaMicroseconds) override;
 
         void Update(const GameTime &gameTime) override;
-        void RenderGameWon();
-        void RenderGameOver();
+        void RenderGameOver(const char *bigText, const char *message);
         void RenderParticleSystem(b2ParticleSystem *ps);
         void Render() override;
 

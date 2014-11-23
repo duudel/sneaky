@@ -10,7 +10,7 @@ namespace sneaky
 
     using namespace rob;
 
-    constexpr float PositionScale = 0.125f;
+    constexpr float PositionScale = 0.025f;
 
     class SoundPlayer
     {
@@ -21,6 +21,8 @@ namespace sneaky
             , m_currentTime(0)
             , m_burning(InvalidSound)
             , m_water(InvalidSound)
+            , m_cake(InvalidSound)
+            , m_punch(InvalidSound)
         { }
 
         void Init(AudioSystem &audio, MasterCache &cache)
@@ -37,6 +39,9 @@ namespace sneaky
 //            m_dying = cache.GetSound("Powerup.wav");
             m_dying = cache.GetSound("kraah2.wav");
             m_score = cache.GetSound("Pickup_Coin.wav");
+
+            m_cake = cache.GetSound("Powerup.wav");
+            m_punch = cache.GetSound("Hit_Hurt34.wav");
         }
 
         void UpdateTime(const GameTime &gameTime)
@@ -79,6 +84,16 @@ namespace sneaky
             PlaySound(m_score, 0.15f, pos);
         }
 
+        void PlayCakeSound(const vec2f &pos)
+        {
+            PlaySound(m_cake, 0.5f, pos);
+        }
+
+        void PlayPunchSound(const vec2f &pos)
+        {
+            PlaySound(m_punch, 0.5f, pos);
+        }
+
     private:
         void PlaySound(SoundHandle sound, float volume, const vec2f &pos)
         {
@@ -99,6 +114,8 @@ namespace sneaky
         SoundHandle m_bird;
         SoundHandle m_dying;
         SoundHandle m_score;
+        SoundHandle m_cake;
+        SoundHandle m_punch;
     };
 
 } // sneaky

@@ -68,7 +68,7 @@ namespace sneaky
             m_owner->SetColor(Color::Orange);
             vec2f playerPos = FromB2(m_visionSensor.GetBody()->GetPosition());
             vec2f rayOrigin = m_owner->GetPosition() + m_owner->GetForward() * 1.5f;
-            b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit/*, GuardBit|CakeBit*/);
+            b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit, GuardBit|CakeBit);
             if (body == m_visionSensor.GetBody())
             {
                 m_lastKnownPlayerPos = playerPos;
@@ -215,7 +215,7 @@ namespace sneaky
         if (m_visionSensor.PlayerSighted())
         {
             if (rob::Distance(m_owner->GetPosition(), FromB2(m_visionSensor.GetBody()->GetPosition())) < 2.5f)
-                m_game->PlayerCaught();
+                m_game->PlayerCaught(m_owner->GetPosition());
         }
 
         LookForPlayer();

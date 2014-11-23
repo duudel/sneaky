@@ -42,11 +42,7 @@ namespace sneaky
         PLAY_AREA_BOTTOM, PLAY_AREA_TOP
     };
 
-    static const float MAX_LIVES = 5;
-
     static const size_t MAX_OBJECTS = 1000;
-
-    static const float SCORE_TIME = 1.0f; // seconds
 
     SneakyState::SneakyState(GameData &gameData)
         : m_gameData(gameData)
@@ -115,7 +111,7 @@ namespace sneaky
         return true;
     }
 
-    float g_theta;
+    //float g_theta;
 
     void SneakyState::CreateWorld()
     {
@@ -131,7 +127,7 @@ namespace sneaky
         const float y0 = PLAY_AREA_BOTTOM;
 
         //const float theta = m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
-        g_theta = 0.0f; //m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
+        //g_theta = 0.0f; //m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
 
         for (int i = 0; i < buildings; i++)
         {
@@ -163,14 +159,10 @@ namespace sneaky
         const float wallSize = 4.0f;
         const float wallSize2 = wallSize / 2.0f;
         const float wallSize3 = wallSize / 3.0f;
-        // Floor
-        CreateStaticBox(vec2f(0.0f, PLAY_AREA_BOTTOM - wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2);
-        // Ceiling
-        CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2);
-        // Left wall
-        CreateStaticBox(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f);
-        // Right wall
-        CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f);
+        CreateStaticBox(vec2f(0.0f, PLAY_AREA_BOTTOM - wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Floor
+        CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Ceiling
+        CreateStaticBox(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Left wall
+        CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Right wall
 
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 2.0f);
         m_path = m_nav.ObtainNavPath();
@@ -191,6 +183,7 @@ namespace sneaky
 //        pldef.type = b2_kinematicBody;
         pldef.type = b2_dynamicBody;
         pldef.userData = pl;
+        pldef.position = ToB2(m_nav.GetRandomNavigableWorldPoint(m_random));
         b2Body *plBody = m_world->CreateBody(&pldef);
 
         pl->SetBody(plBody);
@@ -286,14 +279,12 @@ namespace sneaky
 
         b2BodyDef bodyDef;
         bodyDef.type = b2_kinematicBody;
-//        bodyDef.type = b2_dynamicBody;
         bodyDef.userData = cake;
         bodyDef.position = ToB2(position);
         b2Body *body = m_world->CreateBody(&bodyDef);
 
         cake->SetBody(body);
         cake->SetTexture(GetCache().GetTexture("cake.tex"));
-//        cake->SetColor(Color(0.5f, 0.2f, 0.0f));
 
         b2CircleShape shape;
         shape.m_radius = 1.5f;
@@ -361,22 +352,29 @@ namespace sneaky
     {
         if (m_gameOver) return;
 
+        m_sounds.PlayCakeSound(m_cake->GetPosition());
+
         DestroyObject(m_cake);
         m_gameOver = true;
         m_gameWon = true;
         m_input.SetEnabled(false);
     }
 
-    void SneakyState::PlayerCaught()
+    float g_punchTimer = 0.0f;
+
+    void SneakyState::PlayerCaught(const vec2f &pos)
     {
+        if (g_punchTimer <= 0.0f)
+        {
+            m_sounds.PlayPunchSound(pos);
+            g_punchTimer = m_random.GetReal(0.2f, 0.8f);
+        }
         m_gameOver = true;
         m_input.SetEnabled(false);
     }
 
     bool SneakyState::IsGameOver() const
-    {
-        return m_gameOver;
-    }
+    { return m_gameOver; }
 
     void SneakyState::RecalcProj()
     {
@@ -385,15 +383,15 @@ namespace sneaky
                                                        PLAY_AREA_BOTTOM * g_zoom,
                                                        PLAY_AREA_TOP * g_zoom, -1.0f, 1.0f);
 
-        float s, c;
-        rob::SinCos(g_theta, s, c);
-
-        mat4f viewMat( c, s, 0, 0,
-                      -s, c, 0, 0,
-                       0, 0, 1, 0,
-                       0, 0, 0, 1 );
-
-        m_view.m_projection *= viewMat;
+//        float s, c;
+//        rob::SinCos(g_theta, s, c);
+//
+//        mat4f viewMat( c, s, 0, 0,
+//                      -s, c, 0, 0,
+//                       0, 0, 1, 0,
+//                       0, 0, 0, 1 );
+//
+//        m_view.m_projection *= viewMat;
     }
 
     void SneakyState::OnResize(int w, int h)
@@ -418,6 +416,9 @@ namespace sneaky
     {
         m_inUpdate = true;
         const float deltaTime = gameTime.GetDeltaSeconds();
+
+        if (g_punchTimer > 0.0f)
+            g_punchTimer -= deltaTime;
 
         m_input.UpdateMouse();
         m_sounds.UpdateTime(gameTime);
@@ -452,7 +453,7 @@ namespace sneaky
         m_inUpdate = false;
     }
 
-    void SneakyState::RenderGameWon()
+    void SneakyState::RenderGameOver(const char *bigText, const char *message)
     {
         Renderer &renderer = GetRenderer();
         renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
@@ -463,37 +464,12 @@ namespace sneaky
         TextLayout layout(renderer, vp.w / 2.0f, vp.h / 3.0f);
 
         renderer.SetFontScale(4.0f);
-        layout.AddTextAlignC("Congratulations!", 0.0f);
+        layout.AddTextAlignC(bigText, 0.0f);
         layout.AddLine();
         renderer.SetFontScale(2.0f);
 
         renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-        layout.AddTextAlignC("You ate the cake and it was tasty.", 0.0f);
-        layout.AddLine();
-        layout.AddLine();
-
-        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-        renderer.SetFontScale(1.0f);
-        layout.AddTextAlignC("Press [space] to continue", 0.0f);
-    }
-
-    void SneakyState::RenderGameOver()
-    {
-        Renderer &renderer = GetRenderer();
-        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-        renderer.BindFontShader();
-
-        const Viewport vp = renderer.GetView().m_viewport;
-
-        TextLayout layout(renderer, vp.w / 2.0f, vp.h / 3.0f);
-
-        renderer.SetFontScale(4.0f);
-        layout.AddTextAlignC("Game over", 0.0f);
-        layout.AddLine();
-        renderer.SetFontScale(2.0f);
-
-        renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-        layout.AddTextAlignC("You were caught by the guards.", 0.0f);
+        layout.AddTextAlignC(message, 0.0f);
         layout.AddLine();
         layout.AddLine();
 
@@ -583,22 +559,17 @@ namespace sneaky
         renderer.SetColor(Color::White);
 
         if (m_gameWon)
-            RenderGameWon();
+            RenderGameOver("Congratulations!", "You ate the cake and it was tasty.");
         else if (IsGameOver())
-            RenderGameOver();
+            RenderGameOver("Game over", "You were caught by the guards.");
     }
 
 
     void SneakyState::OnKeyDown(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods)
-    {
-        m_input.SetKey(scancode, true);
-    }
+    { m_input.SetKey(scancode, true); }
 
     void SneakyState::OnKeyUp(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods)
-    {
-        m_input.SetKey(scancode, false);
-    }
-
+    { m_input.SetKey(scancode, false); }
 
     void SneakyState::OnKeyPress(Keyboard::Key key, Keyboard::Scancode scancode, uint32_t mods)
     {
@@ -652,41 +623,7 @@ namespace sneaky
                 RecalcProj();
             }
         }
-
     }
-
-
-    class QueryCallback : public b2QueryCallback
-    {
-    public:
-        QueryCallback(const b2Vec2& point)
-        {
-            m_point = point;
-            m_fixture = NULL;
-        }
-
-        bool ReportFixture(b2Fixture* fixture)
-        {
-            b2Body* body = fixture->GetBody();
-            if (body->GetType() == b2_dynamicBody)
-            {
-                bool inside = fixture->TestPoint(m_point);
-                if (inside)
-                {
-                        m_fixture = fixture;
-
-                        // We are done, terminate the query.
-                        return false;
-                }
-            }
-
-            // Continue the query.
-            return true;
-        }
-
-        b2Vec2 m_point;
-        b2Fixture* m_fixture;
-    };
 
     vec2f ScreenToWorld(const View &view, int x, int y)
     {

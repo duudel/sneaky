@@ -573,23 +573,23 @@ namespace sneaky
             else return 1;
             return fraction;
 
-            if (fixture->GetFilterData().categoryBits & mask)
-            {
-                body = fixture->GetBody();
-                return 0;
-                //this->fraction = fraction;
-                return fraction;
-            }
-            if (fixture->GetFilterData().categoryBits & ignore)
-            {
-                return -1;
-            }
-            //if (body && fraction < this->fraction)
-            //{
-                body = nullptr;
-                return 0;
-            //}
-            //return 1;
+//            if (fixture->GetFilterData().categoryBits & mask)
+//            {
+//                body = fixture->GetBody();
+//                return 0;
+//                //this->fraction = fraction;
+//                return fraction;
+//            }
+//            if (fixture->GetFilterData().categoryBits & ignore)
+//            {
+//                return -1;
+//            }
+//            //if (body && fraction < this->fraction)
+//            //{
+//                body = nullptr;
+//                return 0;
+//            //}
+//            //return 1;
         }
     };
 
