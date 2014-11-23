@@ -315,8 +315,6 @@
 		<Unit filename="src/sneaky/B2DebugDraw.h" />
 		<Unit filename="src/sneaky/Brain.cpp" />
 		<Unit filename="src/sneaky/Brain.h" />
-		<Unit filename="src/sneaky/Facts.cpp" />
-		<Unit filename="src/sneaky/Facts.h" />
 		<Unit filename="src/sneaky/FadeEffect.cpp" />
 		<Unit filename="src/sneaky/FadeEffect.h" />
 		<Unit filename="src/sneaky/Game.cpp" />

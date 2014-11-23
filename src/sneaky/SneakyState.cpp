@@ -524,7 +524,7 @@ namespace sneaky
             case Keyboard::Key::Space:
             {
                 if (IsGameOver())
-                    ChangeState(STATE_HighScore);
+                    ChangeState(STATE_MainMenu);
                 break;
             }
             case Keyboard::Key::Escape:

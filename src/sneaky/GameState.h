@@ -9,8 +9,7 @@ namespace sneaky
     {
         STATE_NoChange = 0,
         STATE_MainMenu,
-        STATE_HighScore,
-        STATE_Info,
+        //STATE_HighScore,
         STATE_Game,
     };
 

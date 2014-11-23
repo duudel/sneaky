@@ -1,7 +1,6 @@
 
 #include "Game.h"
 #include "SneakyState.h"
-#include "Facts.h"
 
 #include "rob/application/Window.h"
 #include "rob/application/GameState.h"
@@ -58,9 +57,9 @@ namespace sneaky
             layout.AddTextAlignR("[space]", -20.0f);
             layout.AddTextAlignL("- New game", 10.0f);
             layout.AddLine();
-            layout.AddTextAlignR("[return]", -20.0f);
-            layout.AddTextAlignL("- High scores", 10.0f);
-            layout.AddLine();
+//            layout.AddTextAlignR("[return]", -20.0f);
+//            layout.AddTextAlignL("- High scores", 10.0f);
+//            layout.AddLine();
             layout.AddTextAlignR("[esc]", -20.0f);
             layout.AddTextAlignL("- Quit", 10.0f);
             layout.AddLine();
@@ -71,9 +70,9 @@ namespace sneaky
             if (key == Keyboard::Key::Escape)
                 QuitState();
             if (key == Keyboard::Key::Space)
-                ChangeState(STATE_Info);
-            if (key == Keyboard::Key::Return)
-                ChangeState(STATE_HighScore);
+                ChangeState(STATE_Game);
+//            if (key == Keyboard::Key::Return)
+//                ChangeState(STATE_HighScore);
         }
     private:
         GameData &m_gameData;
@@ -219,96 +218,6 @@ namespace sneaky
     };
 
 
-
-    class InfoState : public rob::GameState
-    {
-    public:
-        InfoState()
-            : m_facts()
-            , m_fact()
-            , m_textW(0.0f)
-        { }
-
-        bool Initialize() override
-        {
-            if (!m_facts.Load(GetAllocator()))
-            {
-                log::Error("Could not load facts");
-                return false;
-            }
-            if (m_facts.GetFactCount() > 0)
-            {
-                const size_t factIndex = std::rand() % m_facts.GetFactCount();
-
-                m_fact = m_facts.GetFact(factIndex);
-                for (size_t line = 0; line + 1 < m_fact.m_lineCount; line++)
-                {
-                    const char *str = m_fact.m_lines[line];
-                    const float lineW = GetRenderer().GetTextWidth(str);
-                    m_textW = rob::Max(m_textW, lineW);
-                }
-                m_textW *= 0.5f;
-            }
-            return true;
-        }
-
-        ~InfoState()
-        { }
-
-        void Render() override
-        {
-            Delay(20);
-
-            Renderer &renderer = GetRenderer();
-            renderer.SetView(GetDefaultView());
-            renderer.SetColor(Color(1.0f, 1.0f, 1.0f));
-            renderer.BindFontShader();
-
-            const Viewport vp = renderer.GetView().m_viewport;
-            TextLayout layout(renderer, vp.w / 2.0f, vp.h / 8.0f * 2.0f);
-
-            renderer.SetFontScale(2.0f);
-            layout.AddTextAlignC("Brief", 0.0f);
-            layout.AddLine();
-            renderer.SetFontScale(1.0f);
-            layout.AddTextAlignC("There has been an oil accident. Your task is to save the oily birds by cleaning them.", 0.0f);
-            layout.AddLine();
-            layout.AddTextAlignC("With left mouse button you are able to grab the birds. With the right mouse button", 0.0f);
-            layout.AddLine();
-            layout.AddTextAlignC("you can wash them, when they are in the water container.", 0.0f);
-            layout.AddLines(4);
-
-            renderer.SetFontScale(2.0f);
-            layout.AddTextAlignC("Fact", 0.0f);
-            layout.AddLines(1);
-            renderer.SetFontScale(1.0f);
-
-            size_t line = 0;
-            for (; line + 1 < m_fact.m_lineCount; line++)
-            {
-                const char *str = m_fact.m_lines[line];
-                layout.AddTextXAlignL(str, -m_textW);
-                layout.AddLine();
-            }
-            layout.AddLine();
-            layout.AddTextAlignR(m_fact.m_lines[line], m_textW);
-            layout.AddLine();
-    }
-
-    void OnKeyPress(Keyboard::Key key, Keyboard::Scancode scancode, uint32_t mods) override
-        {
-            if (key == Keyboard::Key::Escape)
-                ChangeState(STATE_MainMenu);
-            if (key == Keyboard::Key::Space)
-                ChangeState(STATE_Game);
-        }
-    private:
-        Facts m_facts;
-        Fact m_fact;
-        float m_textW;
-    };
-
-
     bool Game::Initialize()
     {
         std::srand(std::time(0));
@@ -334,8 +243,7 @@ namespace sneaky
         case STATE_NoChange:    break;
 
         case STATE_MainMenu:    ChangeState<MenuState>(m_gameData); break;
-        case STATE_HighScore:   ChangeState<HighScoreState>(m_gameData); break;
-        case STATE_Info:        ChangeState<InfoState>(); break;
+        //case STATE_HighScore:   ChangeState<HighScoreState>(m_gameData); break;
         case STATE_Game:        ChangeState<SneakyState>(m_gameData); break;
         default:
             rob::log::Error("Invalid state change (", state, ")");
