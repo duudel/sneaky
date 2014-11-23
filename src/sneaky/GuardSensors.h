@@ -11,7 +11,7 @@ namespace sneaky
     {
     public:
         GuardLocalSensor()
-            : Sensor(GuardBit | StaticBit, false)
+            : Sensor(GuardBit | StaticBit | CakeBit, false)
             , m_hit(0)
             , m_guards(0)
         { }

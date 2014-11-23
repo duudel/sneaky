@@ -171,6 +171,8 @@ namespace sneaky
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);
 
+        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
+
         for (size_t i = 0; i < 10; i++)
         {
             CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
@@ -200,8 +202,6 @@ namespace sneaky
         PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
 
         pl->SetBrain(brain);
-
-        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
