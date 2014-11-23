@@ -43,26 +43,28 @@ namespace sneaky
         m_vertices = alloc.AllocateArray<Vert>(MAX_VERTICES);
     }
 
-    void NavMesh::SetGrid(const b2World *world, const float halfSize, const float agentRadius)
+    void NavMesh::SetGrid(const b2World *world, const float halfW, const float halfH, const float agentRadius)
     {
         ROB_ASSERT(agentRadius > 0.0f);
         const float gridSz = agentRadius;
 
-        const size_t sideVerts = size_t(2.0f * halfSize / gridSz) + 1;
-        const size_t vertCount = sideVerts * sideVerts;
+        const size_t sideVertsX = size_t(2.0f * halfW / gridSz) + 1;
+        const size_t sideVertsY = size_t(2.0f * halfH / gridSz) + 1;
+        const size_t vertCount = sideVertsX * sideVertsY;
         rob::log::Debug("NavMesh: ", vertCount, " vertices");
         ROB_ASSERT(vertCount <= MAX_VERTICES);
 
-        const size_t sideFaces = sideVerts - 1;
-        const size_t faceCount = sideFaces * sideFaces * 2;
+        const size_t sideFacesX = sideVertsX - 1;
+        const size_t sideFacesY = sideVertsY - 1;
+        const size_t faceCount = sideFacesX * sideFacesY * 2;
         rob::log::Debug("NavMesh: ", faceCount, " faces");
         ROB_ASSERT(faceCount <= MAX_FACES);
 
-        float vY = -halfSize;
-        for (size_t y = 0; y < sideVerts; y++, vY += gridSz)
+        float vY = -halfH;
+        for (size_t y = 0; y < sideVertsY; y++, vY += gridSz)
         {
-            float vX = -halfSize;
-            for (size_t x = 0; x < sideVerts; x++, vX += gridSz)
+            float vX = -halfW;
+            for (size_t x = 0; x < sideVertsX; x++, vX += gridSz)
             {
 //                if (!TestPoint(world, vX, vY))
 //                    AddVertex(vX, vY);
@@ -71,16 +73,16 @@ namespace sneaky
             }
         }
 
-        for (size_t y = 0; y < sideFaces; y++)
+        for (size_t y = 0; y < sideFacesY; y++)
         {
-            for (size_t x = 0; x < sideFaces; x++)
+            for (size_t x = 0; x < sideFacesX; x++)
             {
                 // The faces: 3-2
                 //            |/|
                 //            0-1
-                const size_t i0 = y * sideVerts + x;
+                const size_t i0 = y * sideVertsX + x;
                 const size_t i1 = i0 + 1;
-                const size_t i2 = (y + 1) * sideVerts + x + 1;
+                const size_t i2 = (y + 1) * sideVertsX + x + 1;
                 const size_t i3 = i2 - 1;
                 Vert& v0 = m_vertices[i0];
                 Vert& v1 = m_vertices[i1];
@@ -94,22 +96,22 @@ namespace sneaky
                     faceActive &= !TestPoint(world, c.x, c.y);
                 }
 
-                const uint16_t fi0 = AddFace(i0, i1, i2, faceActive);
-                const uint16_t fi1 = AddFace(i2, i3, i0, faceActive);
+                const index_t fi0 = AddFace(i0, i1, i2, faceActive);
+                const index_t fi1 = AddFace(i2, i3, i0, faceActive);
 
-                const uint16_t fi = (y * sideFaces + x) * 2;
+                const index_t fi = (y * sideFacesX + x) * 2;
 
                 Face &f0 = m_faces[fi0];
                 Face &f1 = m_faces[fi1];
 
                 if (y > 0)
-                    f0.neighbours[0] = fi - sideFaces * 2 + 1;
-                if (x < sideFaces - 1)
+                    f0.neighbours[0] = fi - sideFacesX * 2 + 1;
+                if (x < sideFacesX - 1)
                     f0.neighbours[1] = fi + 3;
                 f0.neighbours[2] = fi + 1;
 
-                if (y < sideFaces - 1)
-                    f1.neighbours[0] = fi + sideFaces * 2;
+                if (y < sideFacesY - 1)
+                    f1.neighbours[0] = fi + sideFacesX * 2;
                 if (x > 0)
                     f1.neighbours[1] = fi - 2;
                 f1.neighbours[2] = fi;
@@ -117,7 +119,8 @@ namespace sneaky
         }
 
         m_gridSz = gridSz;
-        m_halfSize = halfSize;
+        m_halfW = halfW;
+        m_halfH = halfH;
     }
 
     size_t NavMesh::GetFaceCount() const
@@ -140,12 +143,13 @@ namespace sneaky
 
     index_t NavMesh::GetFaceIndex(const vec2f &v) const
     {
-        const int gridW = (m_halfSize * 2.0f) / m_gridSz;
-        const vec2f p = v + vec2f(m_halfSize);
+        const int gridW = (m_halfW * 2.0f) / m_gridSz;
+        const int gridH = (m_halfH * 2.0f) / m_gridSz;
+        const vec2f p = v + vec2f(m_halfW, m_halfH);
         int x = (p.x + 0.5f) / m_gridSz;
         int y = (p.y + 0.5f) / m_gridSz;
         x = rob::Clamp(x, 0, gridW - 1);
-        y = rob::Clamp(y, 0, gridW - 1);
+        y = rob::Clamp(y, 0, gridH - 1);
         int index = (y * gridW + x) * 2;
         if (p.y > p.x) return index + 1;
         return index;
@@ -286,11 +290,11 @@ namespace sneaky
     Navigation::~Navigation()
     { }
 
-    bool Navigation::CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfSize, const float agentRadius)
+    bool Navigation::CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfW, const float worldHalfH, const float agentRadius)
     {
         m_world = world;
         m_mesh.Allocate(alloc);
-        m_mesh.SetGrid(world, worldHalfSize, agentRadius);
+        m_mesh.SetGrid(world, worldHalfW, worldHalfH, agentRadius);
         m_nodes = alloc.AllocateArray<Node>(m_mesh.GetFaceCount());
         m_np.SetMemory(alloc.AllocateArray<NavPath>(16), rob::GetArraySize<NavPath>(16));
         return false;

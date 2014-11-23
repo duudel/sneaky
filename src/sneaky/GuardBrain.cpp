@@ -266,7 +266,7 @@ namespace sneaky
 
     void GuardBrain::NavigateRandom()
     {
-        Navigate(m_rand.GetDirection() * m_rand.GetReal(5.0, 24.0));
+        Navigate(m_nav->GetRandomNavigableWorldPoint(m_rand));
     }
 
     void GuardBrain::DebugRender(rob::Renderer *renderer) const

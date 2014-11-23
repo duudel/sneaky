@@ -19,7 +19,7 @@ namespace sneaky
 
     using namespace rob;
 
-    static const float PLAY_AREA_W      = 72.0f;
+    static const float PLAY_AREA_W      = 96.0f;
     static const float PLAY_AREA_H      = PLAY_AREA_W * 0.75f;
     static const float PLAY_AREA_LEFT   = -PLAY_AREA_W / 2.0f;
     static const float PLAY_AREA_RIGHT  = -PLAY_AREA_LEFT;
@@ -121,23 +121,64 @@ namespace sneaky
         return true;
     }
 
+    float g_theta;
 
     void SneakyState::CreateWorld()
     {
-        const float wallSize = 1.25f;
+        const int city_w = 5;
+        const int city_h = 4;
+        bool lots[city_w][city_h] = {0};
+
+        const int buildings = 14;
+
+        const float lot_w = PLAY_AREA_W / city_w;
+        const float lot_h = PLAY_AREA_H / city_h;
+        const float x0 = PLAY_AREA_LEFT;
+        const float y0 = PLAY_AREA_BOTTOM;
+
+        //const float theta = m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
+        g_theta = 0.0f; //m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
+
+        for (int i = 0; i < buildings; i++)
+        {
+            int lot_x, lot_y;
+            do
+            {
+                lot_x = m_random.GetInt(0, city_w - 1);
+                lot_y = m_random.GetInt(0, city_h - 1);
+            } while (lots[lot_x][lot_y]);
+            lots[lot_x][lot_y] = true;
+
+            float margin = 2.0f;
+            float margin2 = margin / 2.0f;
+
+            float x = x0 + lot_w * lot_x;
+            float y = y0 + lot_h * lot_y;
+            float w = m_random.GetReal(6.0f, lot_w - margin);
+            float h = m_random.GetReal(6.0f, lot_h - margin);
+            float w2 = w / 2.0f;
+            float h2 = h / 2.0f;
+            float delta_x = lot_w - w - margin;
+            float delta_y = lot_h - h - margin;
+            x += margin2 + m_random.GetReal(0.0f, delta_x);
+            y += margin2 + m_random.GetReal(0.0f, delta_y);
+
+            CreateStaticBox(vec2f(x + w2, y + h2), /*theta + */m_random.GetReal(-1.0f, 1.0f) * 2.5f * rob::DEG2RAD, w2, h2);
+        }
+
+        const float wallSize = 4.0f;
+        const float wallSize2 = wallSize / 2.0f;
+        const float wallSize3 = wallSize / 3.0f;
         // Floor
-        CreateStaticBox(vec2f(-16.0f, PLAY_AREA_BOTTOM - 4.0f), 0.0f, 16.0f, 4.0f);
-        // Left wall at the start of conveyor belt
-        CreateStaticBox(vec2f(PLAY_AREA_LEFT - 18.0f, 0.0f), 0.0f, wallSize, PLAY_AREA_H / 2.0f);
-        // Left wall
-        CreateStaticBox(vec2f(PLAY_AREA_LEFT - 1.0f, 4.0f), 0.0f, wallSize, PLAY_AREA_H / 2.0f);
-        // Right wall
-        CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize / 4.0f, -PLAY_AREA_H / 2.0f + 1.0f), 0.0f, wallSize / 2.0f, PLAY_AREA_H / 2.0f);
+        CreateStaticBox(vec2f(0.0f, PLAY_AREA_BOTTOM - wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2);
         // Ceiling
-        CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + 2.0f), 0.0f, PLAY_AREA_W / 2.0f, wallSize);
+        CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2);
+        // Left wall
+        CreateStaticBox(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f);
+        // Right wall
+        CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f);
 
-
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 2.0f);
         m_path = m_nav.ObtainNavPath();
 
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
@@ -145,7 +186,9 @@ namespace sneaky
         Navigate(m_pathStart, m_pathEnd);
 
         for (size_t i = 0; i < 10; i++)
-            CreateGuard(m_random.GetDirection()*m_random.GetReal(0.0, 20.0));
+        {
+            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+        }
 
 
         GameObject *pl = CreateObject(nullptr);
@@ -314,6 +357,16 @@ namespace sneaky
                                                        PLAY_AREA_RIGHT * g_zoom,
                                                        PLAY_AREA_BOTTOM * g_zoom,
                                                        PLAY_AREA_TOP * g_zoom, -1.0f, 1.0f);
+
+        float s, c;
+        rob::SinCos(g_theta, s, c);
+
+        mat4f viewMat( c, s, 0, 0,
+                      -s, c, 0, 0,
+                       0, 0, 1, 0,
+                       0, 0, 0, 1 );
+
+        m_view.m_projection *= viewMat;
     }
 
     void SneakyState::OnResize(int w, int h)

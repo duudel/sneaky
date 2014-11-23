@@ -4,6 +4,7 @@
 
 #include "Physics.h"
 #include "rob/memory/Pool.h"
+#include "rob/math/Random.h"
 
 namespace rob
 {
@@ -51,7 +52,10 @@ namespace sneaky
         ~NavMesh();
 
         void Allocate(rob::LinearAllocator &alloc);
-        void SetGrid(const b2World *world, const float halfSize, const float agentRadius);
+        void SetGrid(const b2World *world, const float halfW, const float halfH, const float agentRadius);
+
+        vec2f GetHalfSize() const
+        { return vec2f(m_halfW, m_halfH); }
 
         size_t GetFaceCount() const;
         const Face& GetFace(size_t index) const;
@@ -78,7 +82,8 @@ namespace sneaky
         Vert *m_vertices;
 
         float m_gridSz;
-        float m_halfSize;
+        float m_halfW;
+        float m_halfH;
     };
 
     void ToggleDistF();
@@ -131,7 +136,28 @@ namespace sneaky
         Navigation();
         ~Navigation();
 
-        bool CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfSize, const float agentRadius);
+        bool CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfW, const float worldHalfH, const float agentRadius);
+
+        bool IsWalkable(const vec2f &point) const
+        {
+            const index_t i = m_mesh.GetFaceIndex(point);
+            const NavMesh::Face &f = m_mesh.GetFace(i);
+            return (f.flags & NavMesh::FaceActive) != 0;
+        }
+
+        vec2f GetRandomNavigableWorldPoint(rob::Random &rand) const
+        {
+            const vec2f halfSize = m_mesh.GetHalfSize();
+
+            vec2f point;
+            do
+            {
+                point.x = rand.GetReal(-halfSize.x, halfSize.x);
+                point.y = rand.GetReal(-halfSize.y, halfSize.y);
+            } while (!IsWalkable(point));
+
+            return point;
+        }
 
         NavPath *ObtainNavPath();
         void ReturnNavPath(NavPath *path);
