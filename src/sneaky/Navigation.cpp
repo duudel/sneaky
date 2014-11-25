@@ -315,7 +315,7 @@ namespace sneaky
 
     bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, uint16_t startFace, uint16_t endFace)
     {
-        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
+//        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
 
         NavMesh::Face sface = m_mesh.GetFace(startFace);
         if ((sface.flags & NavMesh::FaceActive) == 0)
@@ -443,7 +443,7 @@ namespace sneaky
             u = m_nodes[u].prev;
         }
 
-        rob::log::Debug("Nav: Nodes in node path: ", m_path.len);
+//        rob::log::Debug("Nav: Nodes in node path: ", m_path.len);
 
         return found;
     }

@@ -26,6 +26,8 @@ namespace sneaky
     static const float PLAY_AREA_BOTTOM = -PLAY_AREA_H / 2.0f;
     static const float PLAY_AREA_TOP    = -PLAY_AREA_BOTTOM;
 
+    static const float CHARACTER_SCALE = 1.4f;
+
     float g_zoom = 1.0f;
 
     struct Rect
@@ -191,6 +193,7 @@ namespace sneaky
 
         pl->SetBody(plBody);
         pl->SetTexture(GetCache().GetTexture("player.tex"));
+        pl->SetTextureScale(CHARACTER_SCALE);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -258,7 +261,8 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&bodyDef);
 
         guard->SetBody(body);
-        guard->SetTexture(GetCache().GetTexture("player.tex"));
+        guard->SetTexture(GetCache().GetTexture("guard.tex"));
+        guard->SetTextureScale(CHARACTER_SCALE);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -504,8 +508,7 @@ namespace sneaky
         renderer.SetView(m_view);
         renderer.SetModel(mat4f::Identity);
 
-        renderer.SetColor(Color(0.18f, 0.14f, 0.14f));
-        renderer.SetColor(Color(60 / 255.0f, 71 / 255.0f, 49 / 255.0f));
+        renderer.SetColor(Color(0.14f, 0.14f, 0.16f));
         renderer.BindColorShader();
         renderer.DrawFilledRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
 
