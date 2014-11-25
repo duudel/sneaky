@@ -26,6 +26,7 @@ namespace sneaky
         virtual ~Brain() { }
 
         virtual void Update(const rob::GameTime &gameTime) = 0;
+        virtual void Render(rob::Renderer *renderer) const { }
         virtual void DebugRender(rob::Renderer *renderer) const { }
 
         void SetOwner(GameObject *owner) { m_owner = owner; }
@@ -73,7 +74,7 @@ namespace sneaky
         void OnInitialize() override;
 
         void Update(const rob::GameTime &gameTime) override;
-        void DebugRender(rob::Renderer *renderer) const override;
+        void Render(rob::Renderer *renderer) const override;
     private:
         SneakyState *m_game;
         Input *m_input;

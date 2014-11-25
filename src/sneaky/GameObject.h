@@ -52,6 +52,8 @@ namespace sneaky
 
         void SetColor(const Color &color);
         Color GetColor() const;
+        void SetDebugColor(const Color &color);
+        Color GetDebugColor() const;
 
         void SetTexture(rob::TextureHandle texture);
         rob::TextureHandle GetTexture() const;
@@ -67,6 +69,11 @@ namespace sneaky
         bool IsDestroyed() const
         { return m_destroyed; }
 
+        void SetDebugDraw(bool debugDraw)
+        { m_debugDraw = debugDraw; }
+        bool IsDebugDraw() const
+        { return m_debugDraw; }
+
         void Update(const GameTime &gameTime);
         void Render(rob::Renderer *renderer);
 
@@ -78,11 +85,13 @@ namespace sneaky
         Brain *m_brain;
 
         Color m_color;
+        Color m_debugColor;
         rob::TextureHandle m_texture;
         float m_textureScale;
         int m_renderLayer;
 
         bool m_destroyed;
+        bool m_debugDraw;
 
         GameObject *m_next;
     };

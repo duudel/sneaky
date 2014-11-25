@@ -90,6 +90,7 @@ namespace sneaky
         Input m_input;
 
         Navigation m_nav;
+        bool m_debugAi;
 
         NavPath *m_path;
         vec2f m_pathStart, m_pathEnd;

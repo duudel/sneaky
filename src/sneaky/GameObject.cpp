@@ -14,10 +14,12 @@ namespace sneaky
         : m_body(nullptr)
         , m_brain(nullptr)
         , m_color(Color::White)
+        , m_debugColor(Color::White)
         , m_texture(InvalidHandle)
         , m_textureScale(1.0f)
         , m_renderLayer(0)
         , m_destroyed(false)
+        , m_debugDraw(false)
         , m_next(nullptr)
     { }
 
@@ -98,6 +100,12 @@ namespace sneaky
     Color GameObject::GetColor() const
     { return m_color; }
 
+    void GameObject::SetDebugColor(const Color &color)
+    { m_debugColor = color; }
+
+    Color GameObject::GetDebugColor() const
+    { return m_debugColor; }
+
     void GameObject::SetTexture(TextureHandle texture)
     { m_texture = texture; }
 
@@ -119,7 +127,10 @@ namespace sneaky
     {
         vec2f dim = GetDimensions();
 
-        renderer->SetColor(m_color);
+        if (m_brain && m_debugDraw)
+            renderer->SetColor(m_debugColor);
+        else
+            renderer->SetColor(m_color);
 
         const b2Fixture *fixture = m_body->GetFixtureList();
         const b2Shape *shape = fixture->GetShape();
@@ -153,7 +164,8 @@ namespace sneaky
             renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
         }
 
-        if (m_brain) m_brain->DebugRender(renderer);
+        if (m_brain) m_brain->Render(renderer);
+        if (m_brain && m_debugDraw) m_brain->DebugRender(renderer);
     }
 
     void GameObject::SetNext(GameObject *object)

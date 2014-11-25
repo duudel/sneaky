@@ -60,7 +60,7 @@ namespace sneaky
         m_owner->GetBody()->SetLinearVelocity(ToB2(globalVel));
     }
 
-    void PlayerBrain::DebugRender(rob::Renderer *renderer) const
+    void PlayerBrain::Render(rob::Renderer *renderer) const
     {
         renderer->SetColor(Color(2.0f, 1.0f, 0.6f));
         renderer->SetModel(mat4f::Identity);

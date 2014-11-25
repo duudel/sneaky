@@ -60,6 +60,7 @@ namespace sneaky
         , m_objectCount(0)
         , m_input()
         , m_nav()
+        , m_debugAi(false)
         , m_path(nullptr)
         , m_pathStart(0.0f, 0.0f)
         , m_pathEnd(0.0f, 0.0f)
@@ -437,13 +438,15 @@ namespace sneaky
 
         for (size_t i = 0; i < m_objectCount; i++)
         {
-            if (!m_objects[i]->IsDestroyed())
+            GameObject *object = m_objects[i];
+            if (!object->IsDestroyed())
             {
-                m_objects[i]->Update(gameTime);
+                object->SetDebugDraw(m_debugAi); // Update debug drawing mode
+                object->Update(gameTime);
             }
 
-            if (m_objects[i]->IsDestroyed())
-                dead[deadCount++] = m_objects[i];
+            if (object->IsDestroyed())
+                dead[deadCount++] = object;
         }
         for (size_t i = 0; i < deadCount; i++)
         {
@@ -608,6 +611,8 @@ namespace sneaky
         {
             if (key == Keyboard::Key::G)
                 m_drawNav = !m_drawNav;
+            if (key == Keyboard::Key::H)
+                m_debugAi = !m_debugAi;
             if (key == Keyboard::Key::Tab)
                 m_drawBox2D = !m_drawBox2D;
             if (key == Keyboard::Key::Space && !IsGameOver())

@@ -570,7 +570,7 @@ namespace sneaky
         {
             if ((fixture->GetFilterData().categoryBits & ignore) == 0)
                 body = fixture->GetBody();
-            else return 1;
+            else return -1;
             return fraction;
 
 //            if (fixture->GetFilterData().categoryBits & mask)

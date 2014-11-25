@@ -65,7 +65,7 @@ namespace sneaky
     {
         if (m_visionSensor.PlayerSighted())
         {
-            m_owner->SetColor(Color::Orange);
+            m_owner->SetDebugColor(Color::Orange);
             vec2f playerPos = FromB2(m_visionSensor.GetBody()->GetPosition());
             vec2f rayOrigin = m_owner->GetPosition() + m_owner->GetForward() * 1.5f;
             b2Body *body = m_nav->RayCast(rayOrigin, playerPos, PlayerBit, GuardBit|CakeBit);
@@ -86,7 +86,7 @@ namespace sneaky
 
     void GuardBrain::ChangeToWatchState()
     {
-        m_owner->SetColor(Color::Yellow);
+        m_owner->SetDebugColor(Color::Yellow);
         m_stateTimer = m_rand.GetReal(4.0f, 8.0f);
         m_path->Clear();
         m_state = State::Watch;
@@ -94,14 +94,14 @@ namespace sneaky
 
     void GuardBrain::ChangeToPatrolState()
     {
-        m_owner->SetColor(Color::Blue);
+        m_owner->SetDebugColor(Color::Blue);
         NavigateRandom();
         m_state = State::Patrol;
     }
 
     void GuardBrain::ChangeToChaseState()
     {
-        m_owner->SetColor(Color::Red);
+        m_owner->SetDebugColor(Color::Red);
         m_stateTimer = 0.5f;
         Navigate(m_lastKnownPlayerPos);
         m_state = State::Chase;
@@ -188,7 +188,7 @@ namespace sneaky
         if (m_stateTimer <= 0.0f)
             ChangeToPatrolState();
 
-        m_owner->SetColor(Color::Yellow);
+        m_owner->SetDebugColor(Color::Yellow);
 
         StartChasingIfPlayerSighted();
     }
@@ -205,7 +205,7 @@ namespace sneaky
         }
         m_prevPosition = m_owner->GetPosition();
 
-        m_owner->SetColor(Color::Blue);
+        m_owner->SetDebugColor(Color::Blue);
 
         StartChasingIfPlayerSighted();
     }
@@ -220,7 +220,7 @@ namespace sneaky
 
         LookForPlayer();
 
-        m_owner->SetColor(Color::Red);
+        m_owner->SetDebugColor(Color::Red);
 
         if (m_stateTimer <= 0.0f)
         {
