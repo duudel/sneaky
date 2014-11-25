@@ -630,8 +630,8 @@ namespace sneaky
 
             if (f.flags & NavMesh::FaceActive)
                 renderer->SetColor(rob::Color::LightGreen);
-            else
-                renderer->SetColor(rob::Color::Red);
+            else continue;
+//                renderer->SetColor(rob::Color::Red);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
