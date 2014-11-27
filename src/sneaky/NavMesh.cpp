@@ -5,6 +5,9 @@
 #include "rob/Assert.h"
 #include "rob/Log.h"
 
+#include <clipper.hpp>
+#include <poly2tri.h>
+
 namespace sneaky
 {
 
@@ -40,6 +43,164 @@ namespace sneaky
     {
         m_faces = alloc.AllocateArray<Face>(MAX_FACES);
         m_vertices = alloc.AllocateArray<Vert>(MAX_VERTICES);
+    }
+
+    void NavMesh::Create(const b2World *world, const float halfW, const float halfH, const float agentRadius)
+    {
+        m_gridSz = agentRadius;
+        m_halfW = halfW;
+        m_halfH = halfH;
+
+        const float scale = 10.0f;
+        const float wW = halfW * scale;
+        const float wH = halfH * scale;
+
+        using namespace ClipperLib;
+        Clipper clipper;
+        Path worldRegion;
+        worldRegion.push_back(IntPoint(-wW, -wH));
+        worldRegion.push_back(IntPoint(wW, -wH));
+        worldRegion.push_back(IntPoint(wW, wH));
+        worldRegion.push_back(IntPoint(-wW, wH));
+        clipper.AddPath(worldRegion, ptSubject, true);
+
+        const b2Body *body = world->GetBodyList();
+        while (body)
+        {
+            if (body->GetType() == b2_staticBody)
+            {
+                Path &path = worldRegion; // Re-use worldRegion path
+                path.clear();
+
+                // NOTE: Assumes that there is only one fixture per static body.
+                const b2Fixture *fixture = body->GetFixtureList();
+                const b2Shape *shape = fixture->GetShape();
+                switch (shape->GetType())
+                {
+                case b2Shape::e_polygon:
+                    {
+                        const b2PolygonShape *polyShape = (const b2PolygonShape*)shape;
+                        for (int i = 0; i < polyShape->m_count; i++)
+                        {
+                            const b2Vec2 &v = polyShape->m_vertices[i];
+                            const b2Vec2 wp = body->GetWorldPoint(v);
+                            path.push_back(IntPoint(wp.x * scale, wp.y * scale));
+                        }
+                        clipper.AddPath(path, ptClip, true);
+                    } break;
+                default:
+                    rob::log::Debug("NavMesh: Unsupported shape type");
+                    break;
+                }
+            }
+            body = body->GetNext();
+        }
+
+        ClipperLib::Paths paths;
+        clipper.Execute(ctDifference, paths, pftPositive, pftPositive);
+
+        std::vector<p2t::Point*> polyLine;
+        const Path &path = paths[0];
+        for (size_t p = 0; p < path.size(); p++)
+        {
+            const IntPoint &ip = path[p];
+            p2t::Point *point = new p2t::Point(ip.X / scale, ip.Y / scale);
+            polyLine.push_back(point);
+        }
+        p2t::CDT cdt(polyLine);
+
+        for (size_t i = 1; i < paths.size(); i++)
+        {
+            Path &path = paths[i];
+            polyLine.clear();
+            for (size_t p = 0; p < path.size(); p++)
+            {
+                const IntPoint &ip = path[p];
+                p2t::Point *point = new p2t::Point(ip.X / scale, ip.Y / scale);
+                polyLine.push_back(point);
+            }
+            cdt.AddHole(polyLine);
+        }
+
+        cdt.Triangulate();
+
+        for (size_t i = 0; i < MAX_VERTICES; i++)
+            m_vertCache.m_v[i] = nullptr;
+
+        std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
+        for (size_t t = 0; t < tris.size(); t++)
+        {
+            p2t::Triangle *tri = tris[t];
+            p2t::Point *p0 = tri->GetPoint(0);
+            p2t::Point *p1 = tri->GetPoint(1);
+            p2t::Point *p2 = tri->GetPoint(2);
+
+            index_t i0, i1, i2;
+            GetVertex(p0->x, p0->y, &i0);
+            GetVertex(p1->x, p1->y, &i1);
+            GetVertex(p2->x, p2->y, &i2);
+            AddFace(i0, i1, i2, true);
+        }
+
+        for (size_t i = 0; i < m_faceCount; i++)
+        {
+            Face &face = m_faces[i];
+            const index_t i0 = face.vertices[0];
+            const index_t i1 = face.vertices[1];
+            const index_t i2 = face.vertices[2];
+            for (size_t j = i + 1; j < m_faceCount; j++)
+            {
+                Face &other = m_faces[j];
+                if (FaceHasEdge(other, i0, i1))
+                {
+                    SetNeighbour(i, 0, j, i0, i1);
+                }
+                else if (FaceHasEdge(other, i1, i2))
+                {
+                    SetNeighbour(i, 1, j, i1, i2);
+                }
+                else if (FaceHasEdge(other, i2, i0))
+                {
+                    SetNeighbour(i, 2, j, i2, i0);
+                }
+            }
+        }
+    }
+
+    void NavMesh::SetNeighbour(index_t fi, int ni, index_t fj, index_t v0, index_t v1)
+    {
+        m_faces[fi].neighbours[ni] = fj;
+
+        int nj = 0;
+        Face &f = m_faces[fj];
+        if (v0 == f.vertices[0])
+        {
+            if (v1 == f.vertices[1])
+                nj = 0;
+            else if (v1 == f.vertices[2])
+                nj = 2;
+        }
+        else if (v0 == f.vertices[1])
+        {
+            if (v1 == f.vertices[2])
+                nj = 1;
+            else if (v1 == f.vertices[0])
+                nj = 0;
+        }
+        else if (v0 == f.vertices[2])
+        {
+            if (v1 == f.vertices[0])
+                nj = 2;
+            else if (v1 == f.vertices[1])
+                nj = 1;
+        }
+        f.neighbours[nj] = fi;
+    }
+
+    bool NavMesh::FaceHasEdge(const Face &face, index_t v0, index_t v1)
+    {
+        return (face.vertices[0] == v0 || face.vertices[1] == v0 || face.vertices[2] == v0)
+            && (face.vertices[0] == v1 || face.vertices[1] == v1 || face.vertices[2] == v1);
     }
 
     void NavMesh::SetGrid(const b2World *world, const float halfW, const float halfH, const float agentRadius)
@@ -146,25 +307,133 @@ namespace sneaky
         return m_vertices[index];
     }
 
+    int Side(const vec2f &v0, const vec2f &v1, const vec2f &v)
+    {
+        const vec2f e = v1 - v0;
+        const vec2f n(-e.y, e.x);
+        return e.Dot(v - v0);
+    }
+
+    bool NavMesh::FaceContainsPoint(const Face &face, const vec2f &v) const
+    {
+        const Vert &vert0 = m_vertices[face.vertices[0]];
+        const Vert &vert1 = m_vertices[face.vertices[1]];
+        const Vert &vert2 = m_vertices[face.vertices[2]];
+        const vec2f v0(vert0.x, vert0.y);
+        const vec2f v1(vert1.x, vert1.y);
+        const vec2f v2(vert2.x, vert2.y);
+        return Side(v0, v1, v) >= 0 && Side(v1, v2, v) >= 0 && Side(v2, v0, v) >= 0;
+    }
+
     index_t NavMesh::GetFaceIndex(const vec2f &v) const
     {
-        const int gridW = (m_halfW * 2.0f) / m_gridSz;
-        const int gridH = (m_halfH * 2.0f) / m_gridSz;
-        const vec2f p = v + vec2f(m_halfW, m_halfH);
-        int x = (p.x + 0.5f) / m_gridSz;
-        int y = (p.y + 0.5f) / m_gridSz;
-        x = rob::Clamp(x, 0, gridW - 1);
-        y = rob::Clamp(y, 0, gridH - 1);
-        int index = (y * gridW + x) * 2;
-        if (p.y > p.x) return index + 1;
+        for (size_t i = 0; i < m_faceCount; i++)
+        {
+            Face &face = m_faces[i];
+            if (FaceContainsPoint(face, v))
+                return i;
+        }
+        return InvalidIndex;
+//        const int gridW = (m_halfW * 2.0f) / m_gridSz;
+//        const int gridH = (m_halfH * 2.0f) / m_gridSz;
+//        const vec2f p = v + vec2f(m_halfW, m_halfH);
+//        int x = (p.x + 0.5f) / m_gridSz;
+//        int y = (p.y + 0.5f) / m_gridSz;
+//        x = rob::Clamp(x, 0, gridW - 1);
+//        y = rob::Clamp(y, 0, gridH - 1);
+//        int index = (y * gridW + x) * 2;
+//        if (p.y > p.x) return index + 1;
+//        return index;
+    }
+
+    vec2f GetClosestPoint(const vec2f &v0, const vec2f &v1, const vec2f &v2, const vec2f &p)
+    {
+        const vec2f e0 = v1 - v0;
+        const vec2f e1 = v2 - v0;
+        const vec2f p0 = p - v0;
+        const float d0 = e0.Dot(p0);
+        const float d1 = e1.Dot(p0);
+        if (d0 <= 0.0f && d1 <= 0.0f)
+            return v0;
+
+        const vec2f p1 = p - v1;
+        const float d2 = e0.Dot(p1);
+        const float d3 = e1.Dot(p1);
+        if (d2 >= 0.0f && d3 <= d2)
+            return v1;
+
+        const float vc = d0 * d3 - d2 * d1;
+        if (vc <= 0.0f && d0 >= 0.0f && d2 <= 0.0f)
+        {
+            const float t = d0 / (d0 - d2);
+            return v0 + t * e0;
+        }
+
+        const vec2f p2 = p - v2;
+        const float d4 = e0.Dot(p2);
+        const float d5 = e1.Dot(p2);
+        if (d5 >= 0.0f && d4 <= d5)
+            return v2;
+
+        const float vb = d4 * d1 - d0 * d5;
+        if (vb <= 0.0f && d1 >= 0.0f && d5 <= 0.0f)
+        {
+            const float t = d1 / (d1 - d5);
+            return v0 + t * e1;
+        }
+
+        const float va = d2 * d5 - d4 * d3;
+        if (va <= 0.0f && (d3 - d2) >= 0.0f && (d4 - d5) >= 0.0f)
+        {
+            const float t = (d3 - d2) / ((d3 - d2) - (d4 - d5));
+            return v1 + t * (v2 - v1);
+        }
+
+        const float denom = 1.0f / (va + vb + vc);
+        const float t = vb * denom;
+        const float u = vc * denom;
+        return v0 + e0 * t + e1 * u;
+    }
+
+    vec2f NavMesh::GetClosestPointOnFace(const Face &face, const vec2f &p) const
+    {
+        const Vert &v0 = m_vertices[face.vertices[0]];
+        const Vert &v1 = m_vertices[face.vertices[1]];
+        const Vert &v2 = m_vertices[face.vertices[2]];
+        return GetClosestPoint(vec2f(v0.x, v0.y), vec2f(v1.x, v1.y), vec2f(v2.x, v2.y), p);
+    }
+
+    index_t NavMesh::GetClampedFaceIndex(vec2f *v) const
+    {
+//        index_t index = GetFaceIndex(*v);
+//        if (index != InvalidIndex) return index;
+//        index = 0;
+
+        index_t index = 0;
+        vec2f clampedPos = GetClosestPointOnFace(m_faces[0], *v);
+        float minDist = rob::Distance2(clampedPos, *v);
+
+        for (size_t i = 1; i < m_faceCount; i++)
+        {
+            const vec2f pos = GetClosestPointOnFace(m_faces[i], *v);
+            float dist = rob::Distance2(pos, *v);
+            if (dist < minDist)
+            {
+                index = i;
+                clampedPos = pos;
+                minDist = dist;
+            }
+        }
+
+        *v = clampedPos;
         return index;
     }
 
     vec2f NavMesh::GetFaceCenter(const Face &f) const
     {
-        const NavMesh::Vert &v0 = GetVertex(f.vertices[0]);
-        const NavMesh::Vert &v1 = GetVertex(f.vertices[1]);
-        const NavMesh::Vert &v2 = GetVertex(f.vertices[2]);
+        const Vert &v0 = GetVertex(f.vertices[0]);
+        const Vert &v1 = GetVertex(f.vertices[1]);
+        const Vert &v2 = GetVertex(f.vertices[2]);
 
         return vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
     }
@@ -172,8 +441,8 @@ namespace sneaky
     vec2f NavMesh::GetEdgeCenter(index_t f, int edge) const
     {
         const Face &face = GetFace(f);
-        const NavMesh::Vert &v0 = GetVertex(face.vertices[edge]);
-        const NavMesh::Vert &v1 = GetVertex(face.vertices[((edge + 2) & 3) - 1]);
+        const Vert &v0 = GetVertex(face.vertices[edge]);
+        const Vert &v1 = GetVertex(face.vertices[((edge + 2) & 3) - 1]);
         return vec2f(v0.x + v1.x, v0.y + v1.y) / 2.0f;
     }
 
@@ -195,7 +464,7 @@ namespace sneaky
         return pointTest.m_hit;
     }
 
-    void NavMesh::AddVertex(float x, float y, bool active)
+    NavMesh::Vert* NavMesh::AddVertex(float x, float y, bool active)
     {
         ROB_ASSERT(m_vertexCount < MAX_VERTICES);
         Vert &v = m_vertices[m_vertexCount++];
@@ -204,6 +473,43 @@ namespace sneaky
         v.flags = 0;
         v.flags |= active ? VertActive : 0x0;
 //        for (size_t i = 0; i < 8; i++) v.faces[i] = InvalidIndex;
+        return &v;
+    }
+
+    NavMesh::Vert* NavMesh::GetVertex(float x, float y, index_t *index)
+    {
+        const index_t HASH_MASK = MAX_VERTICES - 1;
+        const float scale = 10.0f;
+        int hx = x * scale;
+        int hy = y * scale;
+        x = hx / scale;
+        y = hy / scale;
+
+        const index_t hash = (hx * 32786 + hy) & HASH_MASK;
+
+        Vert *v = m_vertCache.m_v[hash];
+        if (v)
+        {
+            const Vert *vstart = v;
+            while (v && v < m_vertices + MAX_VERTICES)
+            {
+                if (v->x != x || v->y != y)
+                    v++;
+                else
+                    break;
+                if (v == vstart)
+                    break;
+            }
+        }
+
+        if (!v)
+        {
+            v = AddVertex(x, y, true);
+            m_vertCache.m_v[hash] = v;
+        }
+
+        *index = index_t(v - m_vertices);
+        return v;
     }
 
     index_t NavMesh::AddFace(index_t i0, index_t i1, index_t i2, bool active)
@@ -214,6 +520,20 @@ namespace sneaky
         f.vertices[0] = i0;
         f.vertices[1] = i1;
         f.vertices[2] = i2;
+
+        const Vert &v0 = m_vertices[i0];
+        const Vert &v1 = m_vertices[i1];
+        const Vert &v2 = m_vertices[i2];
+        float oi = v1.x * v0.x * (v1.y - v0.y);
+        oi += v2.x * v1.x * (v2.y - v1.y);
+        oi += v0.x * v2.x * (v0.y - v2.y);
+        if (oi < 0)
+        {
+            f.vertices[0] = i0;
+            f.vertices[1] = i2;
+            f.vertices[2] = i1;
+        }
+
         for (size_t i = 0; i < 3; i++) f.neighbours[i] = InvalidIndex;
         f.flags = active ? FaceActive : 0;
         return faceI;

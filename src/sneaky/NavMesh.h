@@ -3,6 +3,7 @@
 #define H_SNEAKY_NAV_MESH_H
 
 #include "Physics.h"
+#include <clipper.hpp>
 
 namespace rob
 {
@@ -11,7 +12,6 @@ namespace rob
 
 namespace sneaky
 {
-
 
     typedef uint32_t index_t;
 
@@ -46,11 +46,13 @@ namespace sneaky
 
         static const index_t MAX_FACES = 1024*64;
         static const index_t MAX_VERTICES = 1024*64;
+
     public:
         NavMesh();
         ~NavMesh();
 
         void Allocate(rob::LinearAllocator &alloc);
+        void Create(const b2World *world, const float halfW, const float halfH, const float agentRadius);
         void SetGrid(const b2World *world, const float halfW, const float halfH, const float agentRadius);
 
         vec2f GetHalfSize() const
@@ -64,14 +66,21 @@ namespace sneaky
 
         index_t GetFaceIndex(const vec2f &v) const;
 
+        vec2f GetClosestPointOnFace(const Face &face, const vec2f &p) const;
+        index_t GetClampedFaceIndex(vec2f *v) const;
+
         vec2f GetFaceCenter(const Face &f) const;
         vec2f GetEdgeCenter(index_t f, int edge) const;
         float GetDist(index_t f0, index_t f1) const;
 
     private:
         static bool TestPoint(const b2World *world, float x, float y);
-        void AddVertex(float x, float y, bool active);
+        Vert* AddVertex(float x, float y, bool active);
+        Vert* GetVertex(float x, float y, index_t *index);
         index_t AddFace(index_t i0, index_t i1, index_t i2, bool active);
+        bool FaceContainsPoint(const Face &face, const vec2f &v) const;
+        bool FaceHasEdge(const Face &face, index_t v0, index_t v1);
+        void SetNeighbour(index_t fi, int ni, index_t fj, index_t v0, index_t v1);
 
     private:
         size_t m_faceCount;
@@ -79,6 +88,12 @@ namespace sneaky
 
         size_t m_vertexCount;
         Vert *m_vertices;
+
+        struct VertexCache
+        {
+            Vert *m_v[MAX_VERTICES];
+        };
+        VertexCache m_vertCache;
 
         float m_gridSz;
         float m_halfW;

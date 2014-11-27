@@ -114,7 +114,7 @@ namespace rob
 
         inline T Dot(const Vector2 &vec) const
         {
-            return Vector2(x * vec.x, y * vec.y);
+            return x * vec.x + y * vec.y;
         }
 
         inline Vector2 DotV(const Vector2 &vec) const

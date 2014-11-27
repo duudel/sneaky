@@ -58,6 +58,8 @@
 			<Add option="-Wno-unused-parameter" />
 			<Add directory="src" />
 			<Add directory="3rdparty/liquidfun/Box2D" />
+			<Add directory="3rdparty/Clipper" />
+			<Add directory="3rdparty/poly2tri/poly2tri/" />
 		</Compiler>
 		<Linker>
 			<Add option="-lmingw32" />
@@ -65,6 +67,8 @@
 			<Add option="-lglew32 -lopengl32" />
 			<Add option="-lOpenAL32" />
 		</Linker>
+		<Unit filename="3rdparty/clipper/clipper.cpp" />
+		<Unit filename="3rdparty/clipper/clipper.hpp" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Box2D.h" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2ChainShape.cpp" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Collision/Shapes/b2ChainShape.h" />
@@ -178,6 +182,18 @@
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2VoronoiDiagram.h" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.cpp" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/common/shapes.cc" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/common/shapes.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/common/utils.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/poly2tri.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/advancing_front.cc" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/advancing_front.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/cdt.cc" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/cdt.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep.cc" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep.h" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.cc" />
+		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.h" />
 		<Unit filename="TODO.txt" />
 		<Unit filename="src/rob/Assert.cpp" />
 		<Unit filename="src/rob/Assert.h" />

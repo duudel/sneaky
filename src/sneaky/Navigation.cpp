@@ -18,9 +18,12 @@ namespace sneaky
     { m_len = 0; }
 
     void NavPath::AppendVertex(float x, float y)
+    { AppendVertex(vec2f(x, y)); }
+
+    void NavPath::AppendVertex(const vec2f &v)
     {
         ROB_ASSERT(m_len < MAX_PATH_LEN);
-        m_path[m_len++] = vec2f(x, y);
+        m_path[m_len++] = v;
     }
 
     void NavPath::ReplaceVertex(size_t index, float x, float y)
@@ -88,7 +91,8 @@ namespace sneaky
     {
         m_world = world;
         m_mesh.Allocate(alloc);
-        m_mesh.SetGrid(world, worldHalfW, worldHalfH, agentRadius);
+        m_mesh.Create(world, worldHalfW, worldHalfH, agentRadius);
+//        m_mesh.SetGrid(world, worldHalfW, worldHalfH, agentRadius);
         m_nodes = alloc.AllocateArray<Node>(m_mesh.GetFaceCount());
         m_np.SetMemory(alloc.AllocateArray<NavPath>(16), rob::GetArraySize<NavPath>(16));
         return false;
@@ -104,42 +108,42 @@ namespace sneaky
     {
 //        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
 
-        NavMesh::Face sface = m_mesh.GetFace(startFace);
-        if ((sface.flags & NavMesh::FaceActive) == 0)
-        {
-            bool goodFace = false;
-            for (size_t i = 0; i < 3; i++)
-            {
-                if (sface.neighbours[i] == NavMesh::InvalidIndex) continue;
-                const NavMesh::Face &nface = m_mesh.GetFace(sface.neighbours[i]);
-                if ((nface.flags & NavMesh::FaceActive) != 0)
-                {
-                    startFace = sface.neighbours[i];
-                    goodFace = true;
-                    break;
-                }
-            }
-            if (!goodFace && sface.neighbours[2] != NavMesh::InvalidIndex)
-            {
-                sface = m_mesh.GetFace(sface.neighbours[2]);
-                if (sface.neighbours[0] != NavMesh::InvalidIndex)
-                {
-                    const NavMesh::Face &nface0 = m_mesh.GetFace(sface.neighbours[0]);
-                    if ((nface0.flags & NavMesh::FaceActive) != 0)
-                    {
-                        startFace = sface.neighbours[0];
-                    }
-                }
-                if (sface.neighbours[1] != NavMesh::InvalidIndex)
-                {
-                    const NavMesh::Face &nface1 = m_mesh.GetFace(sface.neighbours[1]);
-                    if ((nface1.flags & NavMesh::FaceActive) != 0)
-                    {
-                        startFace = sface.neighbours[1];
-                    }
-                }
-            }
-        }
+//        NavMesh::Face sface = m_mesh.GetFace(startFace);
+//        if ((sface.flags & NavMesh::FaceActive) == 0)
+//        {
+//            bool goodFace = false;
+//            for (size_t i = 0; i < 3; i++)
+//            {
+//                if (sface.neighbours[i] == NavMesh::InvalidIndex) continue;
+//                const NavMesh::Face &nface = m_mesh.GetFace(sface.neighbours[i]);
+//                if ((nface.flags & NavMesh::FaceActive) != 0)
+//                {
+//                    startFace = sface.neighbours[i];
+//                    goodFace = true;
+//                    break;
+//                }
+//            }
+//            if (!goodFace && sface.neighbours[2] != NavMesh::InvalidIndex)
+//            {
+//                sface = m_mesh.GetFace(sface.neighbours[2]);
+//                if (sface.neighbours[0] != NavMesh::InvalidIndex)
+//                {
+//                    const NavMesh::Face &nface0 = m_mesh.GetFace(sface.neighbours[0]);
+//                    if ((nface0.flags & NavMesh::FaceActive) != 0)
+//                    {
+//                        startFace = sface.neighbours[0];
+//                    }
+//                }
+//                if (sface.neighbours[1] != NavMesh::InvalidIndex)
+//                {
+//                    const NavMesh::Face &nface1 = m_mesh.GetFace(sface.neighbours[1]);
+//                    if ((nface1.flags & NavMesh::FaceActive) != 0)
+//                    {
+//                        startFace = sface.neighbours[1];
+//                    }
+//                }
+//            }
+//        }
 
         m_path.len = 0;
 
@@ -158,7 +162,7 @@ namespace sneaky
         m_nodes[startFace].dist = 0.0f;
 
         index_t bestFace = startFace;
-        float bestHeuristicCost = rob::Distance(start, end);
+        float bestHeuristicCost = rob::Distance2(start, end);
         bool found = true;
 
         while (n > 0)
@@ -194,11 +198,11 @@ namespace sneaky
                     continue;
                 if (m_nodes[v].closed) // TODO: This is bad if the navmesh is not a grid (maybe)
                     continue;
-                if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
-                    continue;
+//                if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
+//                    continue;
 
                 const float alt = d + m_mesh.GetDist(u, v);
-                const float heuristic = rob::Distance(m_mesh.GetFaceCenter(m_mesh.GetFace(v)), end);
+                const float heuristic = rob::Distance2(m_mesh.GetFaceCenter(m_mesh.GetFace(v)), end);
 
                 if (alt < m_nodes[v].dist)
                 {
@@ -258,6 +262,12 @@ namespace sneaky
 
     void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
     {
+        path->Clear();
+        path->AppendVertex(start.x, start.y);
+    }
+
+    void Navigation::FindStraightPath2(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
+    {
         int num = 0;
         vec2f candidates[3];
         vec2f dest = start;
@@ -265,7 +275,7 @@ namespace sneaky
 
         path->Clear();
 
-//        path->AppendVertex(start.x, start.y);
+        path->AppendVertex(start.x, start.y);
         if (m_path.len <= 1 && fullPath)
         {
             path->AppendVertex(end.x, end.y);
@@ -286,8 +296,6 @@ namespace sneaky
                 if (!rayCast.hit) num++;
             }
 
-            float minDist = 1e6f;
-
             if (num == 0)
             {
                 path->AppendVertex(dest.x, dest.y);
@@ -295,9 +303,11 @@ namespace sneaky
             }
             else
             {
-                for (int j = 0; j < num; j++)
+                float minDist = rob::Distance2(candidates[0], current);
+                dest = candidates[0];
+                for (int j = 1; j < num; j++)
                 {
-                    float dist = (candidates[j] - current).Length2();
+                    float dist = rob::Distance2(candidates[j], current);
                     if (dist < minDist)
                     {
                         minDist = dist;
@@ -328,18 +338,19 @@ namespace sneaky
 
     bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
     {
-        index_t startFace = m_mesh.GetFaceIndex(start);
-        index_t endFace = m_mesh.GetFaceIndex(end);
+//        index_t startFace = m_mesh.GetFaceIndex(start);
+//        index_t endFace = m_mesh.GetFaceIndex(end);
 
-//        if (FindNodePath(start, end, startFace, endFace))
-//        {
-//            FindStraightPath(start, end, path);
-//            return true;
-//        }
-//        return false;
+//        const bool found = FindNodePath(start, end, startFace, endFace);
+//        FindStraightPath(start, end, path, found);
+//        return found;
 
-        const bool found = FindNodePath(start, end, startFace, endFace);
-        FindStraightPath(start, end, path, found);
+        vec2f s = start, e = end;
+        const index_t startFace = m_mesh.GetClampedFaceIndex(&s);
+        const index_t endFace = m_mesh.GetClampedFaceIndex(&e);
+
+        const bool found = FindNodePath(s, e, startFace, endFace);
+        FindStraightPath(s, e, path, found);
         return found;
     }
 
@@ -418,7 +429,8 @@ namespace sneaky
             if (f.flags & NavMesh::FaceActive)
                 renderer->SetColor(rob::Color::LightGreen);
             else
-                renderer->SetColor(rob::Color::Red);
+                continue;
+//                renderer->SetColor(rob::Color::Red);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
@@ -437,6 +449,25 @@ namespace sneaky
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
             renderer->DrawLine(v2.x, v2.y, v0.x, v0.y);
+        }
+
+        if (m_path.len > 0)
+        {
+            renderer->SetColor(rob::Color::Blue);
+            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[0]);
+            for (int n = 0; n < 3; n++)
+            {
+                if (f.neighbours[n] == NavMesh::InvalidIndex) continue;
+
+                const NavMesh::Face &nf = m_mesh.GetFace(f.neighbours[n]);
+                const NavMesh::Vert &v0 = m_mesh.GetVertex(nf.vertices[0]);
+                const NavMesh::Vert &v1 = m_mesh.GetVertex(nf.vertices[1]);
+                const NavMesh::Vert &v2 = m_mesh.GetVertex(nf.vertices[2]);
+
+                renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+                renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
+                renderer->DrawLine(v2.x, v2.y, v0.x, v0.y);
+            }
         }
     }
 

@@ -73,7 +73,7 @@ namespace sneaky
     {
         m_gameData.m_score = 0;
         m_random.Seed(GetTicks());
-        GetWindow().GrabMouse();
+//        GetWindow().GrabMouse();
     }
 
     SneakyState::~SneakyState()
@@ -174,38 +174,37 @@ namespace sneaky
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);
 
-        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
+//        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
-        for (size_t i = 0; i < 10; i++)
-        {
-            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
-        }
+//        for (size_t i = 0; i < 10; i++)
+//        {
+//            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+//        }
 
-
-        GameObject *pl = CreateObject(nullptr);
-
-        b2BodyDef pldef;
-//        pldef.type = b2_kinematicBody;
-        pldef.type = b2_dynamicBody;
-        pldef.userData = pl;
-        pldef.position = ToB2(m_nav.GetRandomNavigableWorldPoint(m_random));
-        b2Body *plBody = m_world->CreateBody(&pldef);
-
-        pl->SetBody(plBody);
-        pl->SetTexture(GetCache().GetTexture("player.tex"));
-        pl->SetTextureScale(CHARACTER_SCALE);
-
-        b2CircleShape shape;
-        shape.m_radius = 1.0f;
-        b2FixtureDef fixDef;
-        fixDef.shape = &shape;
-        fixDef.density = 1.0f;
-        fixDef.filter.categoryBits = PlayerBit;
-        plBody->CreateFixture(&fixDef);
-
-        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
-
-        pl->SetBrain(brain);
+//
+//        GameObject *pl = CreateObject(nullptr);
+//
+//        b2BodyDef pldef;
+//        pldef.type = b2_dynamicBody;
+//        pldef.userData = pl;
+//        pldef.position = ToB2(m_nav.GetRandomNavigableWorldPoint(m_random));
+//        b2Body *plBody = m_world->CreateBody(&pldef);
+//
+//        pl->SetBody(plBody);
+//        pl->SetTexture(GetCache().GetTexture("player.tex"));
+//        pl->SetTextureScale(CHARACTER_SCALE);
+//
+//        b2CircleShape shape;
+//        shape.m_radius = 1.0f;
+//        b2FixtureDef fixDef;
+//        fixDef.shape = &shape;
+//        fixDef.density = 1.0f;
+//        fixDef.filter.categoryBits = PlayerBit;
+//        plBody->CreateFixture(&fixDef);
+//
+//        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
+//
+//        pl->SetBrain(brain);
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
