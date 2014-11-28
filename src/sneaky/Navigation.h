@@ -108,7 +108,7 @@ namespace sneaky
         void RenderPath(rob::Renderer *renderer, const NavPath *path) const;
 
     private:
-        bool FindNodePath(const vec2f &start, const vec2f &end, uint16_t startFace, uint16_t endFace);
+        bool FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace);
         void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath);
         void FindStraightPath2(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath);
 

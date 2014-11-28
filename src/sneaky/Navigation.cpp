@@ -104,46 +104,9 @@ namespace sneaky
     void Navigation::ReturnNavPath(NavPath *path)
     { m_np.Return(path); }
 
-    bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, uint16_t startFace, uint16_t endFace)
+    bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace)
     {
 //        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
-
-//        NavMesh::Face sface = m_mesh.GetFace(startFace);
-//        if ((sface.flags & NavMesh::FaceActive) == 0)
-//        {
-//            bool goodFace = false;
-//            for (size_t i = 0; i < 3; i++)
-//            {
-//                if (sface.neighbours[i] == NavMesh::InvalidIndex) continue;
-//                const NavMesh::Face &nface = m_mesh.GetFace(sface.neighbours[i]);
-//                if ((nface.flags & NavMesh::FaceActive) != 0)
-//                {
-//                    startFace = sface.neighbours[i];
-//                    goodFace = true;
-//                    break;
-//                }
-//            }
-//            if (!goodFace && sface.neighbours[2] != NavMesh::InvalidIndex)
-//            {
-//                sface = m_mesh.GetFace(sface.neighbours[2]);
-//                if (sface.neighbours[0] != NavMesh::InvalidIndex)
-//                {
-//                    const NavMesh::Face &nface0 = m_mesh.GetFace(sface.neighbours[0]);
-//                    if ((nface0.flags & NavMesh::FaceActive) != 0)
-//                    {
-//                        startFace = sface.neighbours[0];
-//                    }
-//                }
-//                if (sface.neighbours[1] != NavMesh::InvalidIndex)
-//                {
-//                    const NavMesh::Face &nface1 = m_mesh.GetFace(sface.neighbours[1]);
-//                    if ((nface1.flags & NavMesh::FaceActive) != 0)
-//                    {
-//                        startFace = sface.neighbours[1];
-//                    }
-//                }
-//            }
-//        }
 
         m_path.len = 0;
 
@@ -167,7 +130,7 @@ namespace sneaky
 
         while (n > 0)
         {
-            int u = 0;
+            index_t u = 0;
             float d = inf;
             for(int i = 0; i < nodeCount; ++i)
             {

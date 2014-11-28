@@ -97,16 +97,60 @@ namespace sneaky
         }
 
         ClipperLib::Paths paths;
-        clipper.Execute(ctDifference, paths, pftPositive, pftPositive);
+        clipper.Execute(ctDifference, paths, pftNonZero, pftNonZero);
+
+        ClipperOffset clipperOfft(2.0, agentRadius);
+        clipperOfft.AddPaths(paths, jtRound, etClosedPolygon);
+        clipperOfft.Execute(paths, -agentRadius * scale);
 
         const float steinerStep = 12.0f;
 
+        std::vector<bool> isHole; isHole.resize(paths.size(), false);
         std::vector<p2t::Point*> polyLine;
-        const Path &path = paths[0];
-        for (size_t p = 1; p < path.size(); p++)
+        for (size_t pl = 0; pl < paths.size(); pl++)
         {
-            const IntPoint &ip0 = path[p - 1];
-            const IntPoint &ip1 = path[p];
+            const Path &path = paths[pl];
+            int orientation = 0;
+            {
+                for (size_t p = 1; p < path.size(); p++)
+                {
+                    const IntPoint &ip0 = path[p - 1];
+                    const IntPoint &ip1 = path[p];
+                    orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
+                }
+                const IntPoint &ip0 = path[path.size() - 1];
+                const IntPoint &ip1 = path[0];
+                orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
+            }
+
+            if (orientation > 0)
+            {
+                isHole[pl] = true;
+                continue;
+            }
+
+            for (size_t p = 1; p < path.size(); p++)
+            {
+                const IntPoint &ip0 = path[p - 1];
+                const IntPoint &ip1 = path[p];
+                const vec2f p0 = vec2f(ip0.X, ip0.Y) / scale;
+                const vec2f p1 = vec2f(ip1.X, ip1.Y) / scale;
+
+                p2t::Point *point = new p2t::Point(ip0.X / scale, ip0.Y / scale);
+                polyLine.push_back(point);
+
+                vec2f v = p1 - p0;
+                const int cnt = v.Length() / steinerStep;
+                v /= cnt;
+                for (int i = 1; i < cnt; i++)
+                {
+                    const vec2f sp = p0 + v * i;
+                    p2t::Point *point = new p2t::Point(sp.x, sp.y);
+                    polyLine.push_back(point);
+                }
+            }
+            const IntPoint &ip0 = path[path.size() - 1];
+            const IntPoint &ip1 = path[0];
             const vec2f p0 = vec2f(ip0.X, ip0.Y) / scale;
             const vec2f p1 = vec2f(ip1.X, ip1.Y) / scale;
 
@@ -123,28 +167,13 @@ namespace sneaky
                 polyLine.push_back(point);
             }
         }
-        const IntPoint &ip0 = path[path.size() - 1];
-        const IntPoint &ip1 = path[0];
-        const vec2f p0 = vec2f(ip0.X, ip0.Y) / scale;
-        const vec2f p1 = vec2f(ip1.X, ip1.Y) / scale;
-
-        p2t::Point *point = new p2t::Point(ip0.X / scale, ip0.Y / scale);
-        polyLine.push_back(point);
-
-        vec2f v = p1 - p0;
-        const int cnt = v.Length() / steinerStep;
-        v /= cnt;
-        for (int i = 1; i < cnt; i++)
-        {
-            const vec2f sp = p0 + v * i;
-            p2t::Point *point = new p2t::Point(sp.x, sp.y);
-            polyLine.push_back(point);
-        }
 
         p2t::CDT cdt(polyLine);
 
-        for (size_t i = 1; i < paths.size(); i++)
+        for (size_t i = 0; i < paths.size(); i++)
         {
+            if (!isHole[i]) continue;
+
             Path &path = paths[i];
             polyLine.clear();
             for (size_t p = 0; p < path.size(); p++)
@@ -156,13 +185,13 @@ namespace sneaky
             cdt.AddHole(polyLine);
         }
 
-        const int ptsX = int(halfW * 2.0f / steinerStep);
-        const int ptsY = int(halfH * 2.0f / steinerStep);
-        for (int y = 1; y < ptsY; y++)
-        {
-            for (int x = 1; x < ptsX; x++)
-                cdt.AddPoint(new p2t::Point(-halfW + steinerStep * x, -halfH + steinerStep * y));
-        }
+//        const int ptsX = int(halfW * 2.0f / steinerStep);
+//        const int ptsY = int(halfH * 2.0f / steinerStep);
+//        for (int y = 1; y < ptsY; y++)
+//        {
+//            for (int x = 1; x < ptsX; x++)
+//                cdt.AddPoint(new p2t::Point(-halfW + steinerStep * x, -halfH + steinerStep * y));
+//        }
 
         cdt.Triangulate();
 
@@ -527,19 +556,32 @@ namespace sneaky
         x = hx / scale;
         y = hy / scale;
 
-        const index_t hash = (hx * 32786 + hy) & HASH_MASK;
+        index_t hash = (hx * 32786 + hy) & HASH_MASK;
 
         Vert *v = m_vertCache.m_v[hash];
         if (v)
         {
-            const Vert *vstart = v;
-            while (v && v < m_vertices + MAX_VERTICES)
+            const index_t hstart = hash;
+            while (v && hash < MAX_VERTICES)
             {
-                if (v->x != x || v->y != y)
-                    v++;
+                v = m_vertCache.m_v[hash];
+                if (v && (v->x != x || v->y != y))
+                {
+                    hash++;
+                }
                 else
                     break;
-                if (v == vstart)
+            }
+            while (v && hash < hstart)
+            {
+                v = m_vertCache.m_v[hash];
+                if (v && (v->x != x || v->y != y))
+                {
+                    hash++;
+                }
+                else
+                    break;
+                if (hash == hstart)
                     break;
             }
         }

@@ -767,7 +767,8 @@ Point& Sweep::NextFlipPoint(Point& ep, Point& eq, Triangle& ot, Point& op)
     return *ot.PointCW(op);
   } else{
     //throw new RuntimeException("[Unsupported] Opposing point on constrained edge");
-    assert(0);
+//    assert(0);
+    return *ot.GetPoint(0);
   }
 }
 
