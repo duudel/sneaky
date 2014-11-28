@@ -260,10 +260,98 @@ namespace sneaky
         }
     };
 
+    inline float TriArea(const vec2f a, const vec2f &b, const vec2f &c)
+    {
+        const vec2f ab = b - a;
+        const vec2f ac = c - a;
+        return (ac.x * ab.y - ab.x * ac.y);
+    }
+
     void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
     {
         path->Clear();
         path->AppendVertex(start.x, start.y);
+        if (m_path.len > 1)
+        {
+            vec2f apex, portalLeft, portalRight;
+            apex = portalLeft = portalRight = start;
+            int apexInd = 0;
+            int leftInd = 0;
+            int rightInd = 0;
+
+//            index_t leftFace = m_path.path[0];
+//            index_t rightFace = m_path.path[0];
+            for (size_t i = 0; i < m_path.len; i++)
+            {
+                vec2f left, right;
+                if (i + 1 < m_path.len)
+                {
+                    m_mesh.GetPortalPoints(m_path.path[i], m_path.path[i + 1], left, right);
+                }
+                else
+                {
+                    left = right = end;
+                }
+
+                // Right vertex:
+                if (TriArea(apex, portalRight, right) <= 0.0f)
+                {
+                    if (vec2f::Equals(apex, portalRight) || TriArea(apex, portalLeft, right) > 0.0f)
+                    {
+                        portalRight = right;
+//                        rightFace = (i + 1 < m_path.len) ? m_path.path[i + 1] : NavMesh::InvalidIndex;
+                        rightInd = i;
+                    }
+                    else
+                    {
+//                        // Append portals along the current straight path segment.
+//                        if (options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS))
+//                        {
+//                            stat = appendPortals(apexIndex, leftIndex, portalLeft, path,
+//                            straightPath, straightPathFlags, straightPathRefs,
+//                            straightPathCount, maxStraightPath, options);
+//                            if (stat != DT_IN_PROGRESS)
+//                            return stat;
+//                        }
+                        apex = portalLeft;
+                        apexInd = leftInd;
+
+                        path->AppendVertex(apex);
+
+                        portalLeft = portalRight = apex;
+                        leftInd = rightInd = apexInd;
+                        // Restart
+                        i = apexInd;
+                        continue;
+                    }
+                }
+
+                // Left vertex:
+                if (TriArea(apex, portalLeft, left) >= 0.0f)
+                {
+                    if (vec2f::Equals(apex, portalLeft) || TriArea(apex, portalRight, left) < 0.0f)
+                    {
+                        portalLeft = left;
+//                        leftFace = (i + 1 < m_path.len) ? m_path.path[i + 1] : NavMesh::InvalidIndex;
+                        leftInd = i;
+                    }
+                    else
+                    {
+                        apex = portalRight;
+                        apexInd = rightInd;
+
+                        path->AppendVertex(apex);
+
+                        portalLeft = portalRight = apex;
+                        leftInd = rightInd = apexInd;
+                        // Restart
+                        i = apexInd;
+                        continue;
+                    }
+                }
+            }
+        }
+        path->AppendVertex(end.x, end.y);
     }
 
     void Navigation::FindStraightPath2(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)

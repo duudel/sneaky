@@ -30,6 +30,12 @@ namespace rob
             vec[0] = x; vec[1] = y;
         }
 
+        static inline bool Equals(const Vector2 &a, const Vector2 &b, const T dist = T(1.0) / T(16384.0))
+        {
+            const Vector2 v(a - b);
+            return v.Length2() < dist * dist;
+        }
+
         inline Vector2& operator = (const Vector2 &vec)
         {
             v = vec.v;

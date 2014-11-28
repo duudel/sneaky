@@ -73,6 +73,8 @@ namespace sneaky
         vec2f GetEdgeCenter(index_t f, int edge) const;
         float GetDist(index_t f0, index_t f1) const;
 
+        void GetPortalPoints(const index_t from, const index_t to, vec2f &left, vec2f &right) const;
+
     private:
         static bool TestPoint(const b2World *world, float x, float y);
         Vert* AddVertex(float x, float y, bool active);

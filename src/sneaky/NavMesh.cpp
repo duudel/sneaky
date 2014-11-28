@@ -512,6 +512,13 @@ namespace sneaky
         return v;
     }
 
+    inline float TriArea(const vec2f a, const vec2f &b, const vec2f &c)
+    {
+        const vec2f ab = b - a;
+        const vec2f ac = c - a;
+        return (ac.x * ab.y - ab.x * ac.y);
+    }
+
     index_t NavMesh::AddFace(index_t i0, index_t i1, index_t i2, bool active)
     {
         ROB_ASSERT(m_faceCount < MAX_FACES);
@@ -524,19 +531,46 @@ namespace sneaky
         const Vert &v0 = m_vertices[i0];
         const Vert &v1 = m_vertices[i1];
         const Vert &v2 = m_vertices[i2];
-        float oi = v1.x * v0.x * (v1.y - v0.y);
-        oi += v2.x * v1.x * (v2.y - v1.y);
-        oi += v0.x * v2.x * (v0.y - v2.y);
-        if (oi < 0)
+        if (TriArea(vec2f(v0.x, v0.y), vec2f(v1.x, v1.y), vec2f(v2.x, v2.y)) < 0.0f)
         {
             f.vertices[0] = i0;
             f.vertices[1] = i2;
             f.vertices[2] = i1;
         }
 
+//        float oi = v1.x * v0.x * (v1.y - v0.y);
+//        oi += v2.x * v1.x * (v2.y - v1.y);
+//        oi += v0.x * v2.x * (v0.y - v2.y);
+//        if (oi < 0)
+//        {
+//            f.vertices[0] = i0;
+//            f.vertices[1] = i2;
+//            f.vertices[2] = i1;
+//        }
+
         for (size_t i = 0; i < 3; i++) f.neighbours[i] = InvalidIndex;
         f.flags = active ? FaceActive : 0;
         return faceI;
+    }
+
+    void NavMesh::GetPortalPoints(const index_t from, const index_t to, vec2f &left, vec2f &right) const
+    {
+        const Face &fromFace = m_faces[from];
+//        const Face &toFace = m_faces[to];
+
+        int edge = 0;
+        for (; edge < 3; edge++)
+        {
+            if (fromFace.neighbours[edge] == to)
+                break;
+        }
+
+        const index_t v0 = fromFace.vertices[edge];
+        const index_t v1 = fromFace.vertices[(edge + 1) % 3];
+        const Vert &vert0 = m_vertices[v0];
+        const Vert &vert1 = m_vertices[v1];
+        left = vec2f(vert0.x, vert0.y);
+        right = vec2f(vert1.x, vert1.y);
     }
 
 } // sneaky
