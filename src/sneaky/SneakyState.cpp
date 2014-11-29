@@ -66,7 +66,7 @@ namespace sneaky
         , m_path(nullptr)
         , m_pathStart(0.0f, 0.0f)
         , m_pathEnd(0.0f, 0.0f)
-        , m_drawNav(false)
+        , m_drawNav(true)
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
@@ -110,7 +110,17 @@ namespace sneaky
 
         m_input.SetView(&m_view);
 
+        static uint32_t seed = 2013034;
+
+        m_random.Seed(seed);
         CreateWorld();
+//        if (m_nav.GetMesh().GetFaceCount() < 10)
+//        {
+//            rob::log::Info("Seed: ", seed);
+//            return true;
+//        }
+//        seed++;
+//        ChangeState(STATE_Game);
         return true;
     }
 

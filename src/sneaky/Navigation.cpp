@@ -389,13 +389,6 @@ namespace sneaky
 
     bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
     {
-//        index_t startFace = m_mesh.GetFaceIndex(start);
-//        index_t endFace = m_mesh.GetFaceIndex(end);
-
-//        const bool found = FindNodePath(start, end, startFace, endFace);
-//        FindStraightPath(start, end, path, found);
-//        return found;
-
         vec2f s = start, e = end;
         const index_t startFace = m_mesh.GetClampedFaceIndex(&s);
         const index_t endFace = m_mesh.GetClampedFaceIndex(&e);
@@ -451,25 +444,28 @@ namespace sneaky
     }
 
 
-    void RenderClipperPath(rob::Renderer *renderer, const ClipperLib::Path &path)
+    void RenderClippedPath(rob::Renderer *renderer, const std::vector<vec2f> &path)
     {
+//        const float clipperScale = 20.0f;
         for (size_t i = 1; i < path.size(); i++)
         {
-            const ClipperLib::IntPoint &p0 = path[i - 1];
-            const ClipperLib::IntPoint &p1 = path[i];
-
-            const vec2f v0 = vec2f(p0.X, p0.Y) / 10.0f;
-            const vec2f v1 = vec2f(p1.X, p1.Y) / 10.0f;
-
-            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+//            const ClipperLib::IntPoint &p0 = path[i - 1];
+//            const ClipperLib::IntPoint &p1 = path[i];
+//
+//            const vec2f v0 = vec2f(p0.X, p0.Y) / clipperScale;
+//            const vec2f v1 = vec2f(p1.X, p1.Y) / clipperScale;
+//
+//            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+            renderer->DrawLine(path[i - 1].x, path[i - 1].y, path[i].x, path[i].y);
         }
-        const ClipperLib::IntPoint &p0 = path[path.size() - 1];
-        const ClipperLib::IntPoint &p1 = path[0];
-
-        const vec2f v0 = vec2f(p0.X, p0.Y) / 10.0f;
-        const vec2f v1 = vec2f(p1.X, p1.Y) / 10.0f;
-
-        renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+//        const ClipperLib::IntPoint &p0 = path[path.size() - 1];
+//        const ClipperLib::IntPoint &p1 = path[0];
+//
+//        const vec2f v0 = vec2f(p0.X, p0.Y) / clipperScale;
+//        const vec2f v1 = vec2f(p1.X, p1.Y) / clipperScale;
+//
+//        renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+        renderer->DrawLine(path[path.size() - 1].x, path[path.size() - 1].y, path[0].x, path[0].y);
     }
 
     void Navigation::RenderMesh(rob::Renderer *renderer) const
@@ -529,17 +525,17 @@ namespace sneaky
             }
         }
 
-//        renderer->SetColor(rob::Color::Yellow);
-//        for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
-//        {
-//            RenderClipperPath(renderer, m_mesh.m_solids[i]);
-//        }
+        renderer->SetColor(rob::Color::Yellow);
+        for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
+        {
+            RenderClippedPath(renderer, m_mesh.m_solids[i]);
+        }
 
-//        renderer->SetColor(rob::Color::Red);
-//        for (size_t i = 0; i < m_mesh.m_holes.size(); i++)
-//        {
-//            RenderClipperPath(renderer, m_mesh.m_holes[i]);
-//        }
+        renderer->SetColor(rob::Color::Red);
+        for (size_t i = 0; i < m_mesh.m_holes.size(); i++)
+        {
+            RenderClippedPath(renderer, m_mesh.m_holes[i]);
+        }
     }
 
     void Navigation::RenderPath(rob::Renderer *renderer, const NavPath *path) const

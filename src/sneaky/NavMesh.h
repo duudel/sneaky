@@ -76,14 +76,14 @@ namespace sneaky
 
         void GetPortalPoints(const index_t from, const index_t to, vec2f &left, vec2f &right) const;
 
-        ClipperLib::Paths m_solids;
-        ClipperLib::Paths m_holes;
+        std::vector<std::vector<vec2f> > m_solids;
+        std::vector<std::vector<vec2f> > m_holes;
 
     private:
         void TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
         void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
 
-        void Refine();
+        int Refine();
 
         static bool TestPoint(const b2World *world, float x, float y);
         Vert* AddVertex(float x, float y, bool active);

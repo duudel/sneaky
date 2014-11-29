@@ -106,6 +106,7 @@ namespace sneaky
             pathSize += cnt;
         }
 
+        rob::log::Debug("AddPath: pathsize ", pathSize);
         poly.Init(pathSize);
 
         size_t n = 0;
@@ -148,26 +149,27 @@ namespace sneaky
     {
         TPPLPartition partition;
         std::list<TPPLPoly> polys;
-        polys.resize(holes.size() + 1);
+        polys.resize(holes.size() + 1 - 0);
 
         std::list<TPPLPoly>::iterator polyIt = polys.begin();
         TPPLPoly &poly = *polyIt;
-        AddPolyPath(poly, path, clipperScale);
-//        poly.Init(path.size());
-//        for (size_t i = 0; i < path.size(); i++)
-//        {
-//            const ClipperLib::IntPoint &ip = path[i];
-//            poly[i].x = ip.X / clipperScale;
-//            poly[i].y = ip.Y / clipperScale;
-//        }
+//        AddPolyPath(poly, path, clipperScale);
+        poly.Init(path.size());
+        for (size_t i = 0; i < path.size(); i++)
+        {
+            const ClipperLib::IntPoint &ip = path[i];
+            poly[i].x = ip.X / clipperScale;
+            poly[i].y = ip.Y / clipperScale;
+        }
+        poly.SetHole(false);
+        ROB_ASSERT(poly.GetOrientation() == TPPL_CCW);
 
-        polyIt++;
-        for (size_t h = 0; h < holes.size(); h++, ++polyIt)
+        ++polyIt;
+        for (size_t h = 0; h + 0 < holes.size(); h++, ++polyIt)
         {
             const ClipperLib::Path &holePath = holes[h];
             TPPLPoly &hole = *polyIt;
             hole.Init(holePath.size());
-            hole.SetHole(true);
 //            AddPolyPath(hole, holePath, clipperScale);
             for (size_t i = 0; i < holePath.size(); i++)
             {
@@ -175,10 +177,13 @@ namespace sneaky
                 hole[i].x = ip.X / clipperScale;
                 hole[i].y = ip.Y / clipperScale;
             }
+            hole.SetHole(true);
+            ROB_ASSERT(hole.GetOrientation() == TPPL_CW);
         }
 
         std::list<TPPLPoly> tris;
-        partition.Triangulate_EC(&polys, &tris);
+        int result = partition.Triangulate_EC(&polys, &tris);
+        rob::log::Debug("Triangulate_EC: ", result);
 
         std::list<TPPLPoly>::iterator it;
         for (it = tris.begin(); it != tris.end(); ++it)
@@ -301,9 +306,9 @@ namespace sneaky
         for (size_t i = 0; i < MAX_VERTICES; i++)
             m_vertCache.m_v[i] = nullptr;
 
-        const float scale = 10.0f;
-        const float wW = halfW * scale;
-        const float wH = halfH * scale;
+        const float clipperScale = 8.0f;
+        const float wW = halfW * clipperScale;
+        const float wH = halfH * clipperScale;
 
         using namespace ClipperLib;
         Clipper clipper;
@@ -334,7 +339,7 @@ namespace sneaky
                         {
                             const b2Vec2 &v = polyShape->m_vertices[i];
                             const b2Vec2 wp = body->GetWorldPoint(v);
-                            path.push_back(IntPoint(wp.x * scale, wp.y * scale));
+                            path.push_back(IntPoint(wp.x * clipperScale, wp.y * clipperScale));
                         }
                         clipper.AddPath(path, ptClip, true);
                     } break;
@@ -352,19 +357,44 @@ namespace sneaky
         ClipperOffset clipperOfft(2.0, agentRadius);
         clipperOfft.AddPaths(paths, jtRound, etClosedPolygon);
         paths.clear();
-        clipperOfft.Execute(paths, -agentRadius * scale);
+        clipperOfft.Execute(paths, -agentRadius * clipperScale); // * 1.05f);
 
         Paths solids, holes;
         ClassifyPaths(paths, solids, holes);
-        m_solids = solids;
-        m_holes = holes;
+
+        m_solids.resize(solids.size());
+        for (size_t i = 0; i < solids.size(); i++)
+        {
+            Path &cpath = solids[i];
+            std::vector<vec2f> &path = m_solids[i];
+            path.resize(cpath.size());
+            for (size_t p = 0; p < cpath.size(); p++)
+                path[p] = vec2f(cpath[p].X / clipperScale, cpath[p].Y / clipperScale);
+        }
+
+        m_holes.resize(holes.size());
+        for (size_t i = 0; i < holes.size(); i++)
+        {
+            Path &cpath = holes[i];
+            std::vector<vec2f> &path = m_holes[i];
+            path.resize(cpath.size());
+            for (size_t p = 0; p < cpath.size(); p++)
+                path[p] = vec2f(cpath[p].X / clipperScale, cpath[p].Y / clipperScale);
+        }
+
+        rob::log::Debug("Solids: ", m_solids.size(), ", holes: ", m_holes.size());
+        for (size_t s = 0; s < m_solids.size(); s++)
+            rob::log::Debug("s", s, ": ", m_solids[s].size());
+        for (size_t h = 0; h < m_holes.size(); h++)
+            rob::log::Debug("h", h, ": ", m_holes[h].size());
+
 
         for (size_t s = 0; s < solids.size(); s++)
         {
             const Path &solid = solids[s];
             size_t start = m_faceCount;
 
-            TriangulatePath(solid, holes, scale);
+            TriangulatePath(solid, holes, clipperScale);
 
             for (size_t i = start; i < m_faceCount; i++)
             {
@@ -390,7 +420,7 @@ namespace sneaky
                 }
             }
         }
-        Refine();
+        while (Refine() > 0) ;
 
 //        for (size_t i = 0; i < m_faceCount; i++)
 //        {
@@ -417,8 +447,9 @@ namespace sneaky
 //        }
     }
 
-    void NavMesh::Refine()
+    int NavMesh::Refine()
     {
+        int refinedFaces = 0;
         static const int prevV[] = { 2, 0, 1 };
         static const int nextV[] = { 1, 2, 0 };
         for (index_t f = 0; f < m_faceCount; f++)
@@ -468,6 +499,7 @@ namespace sneaky
 
                     if (area0 > 0.0f && area1 > 0.0f && edgeLen > 1.1f * altLen)
                     {
+                        refinedFaces++;
                         face.flags = 1;
                         neighbour.flags = 1;
 //                        continue;
@@ -497,6 +529,8 @@ namespace sneaky
                 }
             }
         }
+        rob::log::Debug("Refined faces: ", refinedFaces);
+        return refinedFaces;
     }
 
     void NavMesh::SetNeighbour(index_t fi, int ni, index_t fj, index_t v0, index_t v1)
@@ -666,16 +700,6 @@ namespace sneaky
                 return i;
         }
         return InvalidIndex;
-//        const int gridW = (m_halfW * 2.0f) / m_gridSz;
-//        const int gridH = (m_halfH * 2.0f) / m_gridSz;
-//        const vec2f p = v + vec2f(m_halfW, m_halfH);
-//        int x = (p.x + 0.5f) / m_gridSz;
-//        int y = (p.y + 0.5f) / m_gridSz;
-//        x = rob::Clamp(x, 0, gridW - 1);
-//        y = rob::Clamp(y, 0, gridH - 1);
-//        int index = (y * gridW + x) * 2;
-//        if (p.y > p.x) return index + 1;
-//        return index;
     }
 
     vec2f GetClosestPoint(const vec2f &v0, const vec2f &v1, const vec2f &v2, const vec2f &p)
@@ -901,6 +925,7 @@ namespace sneaky
 
     void NavMesh::GetPortalPoints(const index_t from, const index_t to, vec2f &left, vec2f &right) const
     {
+        static const int next[] = { 1, 2, 0 };
         const Face &fromFace = m_faces[from];
 //        const Face &toFace = m_faces[to];
 
@@ -912,7 +937,7 @@ namespace sneaky
         }
 
         const index_t v0 = fromFace.vertices[edge];
-        const index_t v1 = fromFace.vertices[(edge + 1) % 3];
+        const index_t v1 = fromFace.vertices[next[edge]];
         const Vert &vert0 = m_vertices[v0];
         const Vert &vert1 = m_vertices[v1];
         left = vec2f(vert0.x, vert0.y);
