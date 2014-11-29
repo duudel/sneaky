@@ -106,7 +106,7 @@ namespace sneaky
 
     bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace)
     {
-        rob::log::Info("Nav: Start node: ", startFace, ", end node: ", endFace, ", faces:", m_mesh.GetFaceCount());
+//        rob::log::Info("Nav: Start node: ", startFace, ", end node: ", endFace, ", faces:", m_mesh.GetFaceCount());
 
         m_path.len = 0;
         if (startFace == endFace) return true;
@@ -138,7 +138,7 @@ namespace sneaky
 
         while (n > 0)
         {
-            index_t u = 0;
+            index_t u = NavMesh::InvalidIndex;
             float d = inf;
             for (int i = 0; i < nodeCount; i++)
             {
@@ -150,22 +150,16 @@ namespace sneaky
                 }
             }
 
-            m_nodes[u].closed = true;
-            n--;
-
-//            rob::log::Info("Nav: node: ", u, ", dist: ", d);
-
             if(u == endFace) break;
-            if(d > inf - 100.0f)
+            if(u == NavMesh::InvalidIndex)
             {
-                // return false;
                 found = false; // Did not find full path.
                 endFace = bestFace;
                 break;
             }
 
-//            m_nodes[u].closed = true;
-//            n--;
+            m_nodes[u].closed = true;
+            n--;
 
             for (int i = 0; i < 3; i++)
             {
@@ -190,7 +184,6 @@ namespace sneaky
                 {
                     m_nodes[v].dist = alt;
                     m_nodes[v].prev = u;
-//                    rob::log::Info("Nav: node: ", v, ", dist: ", alt);
                 }
                 if (heuristic < bestHeuristicCost)
                 {
@@ -217,7 +210,7 @@ namespace sneaky
             u = m_nodes[u].prev;
         }
 
-        rob::log::Info("Nav: Nodes in node path: ", m_path.len);
+//        rob::log::Info("Nav: Nodes in node path: ", m_path.len);
 
         return found;
     }
