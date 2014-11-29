@@ -446,26 +446,15 @@ namespace sneaky
 
     void RenderClippedPath(rob::Renderer *renderer, const std::vector<vec2f> &path)
     {
-//        const float clipperScale = 20.0f;
         for (size_t i = 1; i < path.size(); i++)
         {
-//            const ClipperLib::IntPoint &p0 = path[i - 1];
-//            const ClipperLib::IntPoint &p1 = path[i];
-//
-//            const vec2f v0 = vec2f(p0.X, p0.Y) / clipperScale;
-//            const vec2f v1 = vec2f(p1.X, p1.Y) / clipperScale;
-//
-//            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
-            renderer->DrawLine(path[i - 1].x, path[i - 1].y, path[i].x, path[i].y);
+            const vec2f v0(path[i - 1]);
+            const vec2f v1(path[i]);
+            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
         }
-//        const ClipperLib::IntPoint &p0 = path[path.size() - 1];
-//        const ClipperLib::IntPoint &p1 = path[0];
-//
-//        const vec2f v0 = vec2f(p0.X, p0.Y) / clipperScale;
-//        const vec2f v1 = vec2f(p1.X, p1.Y) / clipperScale;
-//
-//        renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
-        renderer->DrawLine(path[path.size() - 1].x, path[path.size() - 1].y, path[0].x, path[0].y);
+        const vec2f v0(path[path.size() - 1]);
+        const vec2f v1(path[0]);
+        renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
     }
 
     void Navigation::RenderMesh(rob::Renderer *renderer) const
@@ -525,7 +514,7 @@ namespace sneaky
             }
         }
 
-        renderer->SetColor(rob::Color::Yellow);
+        renderer->SetColor(rob::Color::Orange);
         for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
         {
             RenderClippedPath(renderer, m_mesh.m_solids[i]);

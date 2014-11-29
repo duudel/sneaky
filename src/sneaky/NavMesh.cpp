@@ -153,14 +153,14 @@ namespace sneaky
 
         std::list<TPPLPoly>::iterator polyIt = polys.begin();
         TPPLPoly &poly = *polyIt;
-//        AddPolyPath(poly, path, clipperScale);
-        poly.Init(path.size());
-        for (size_t i = 0; i < path.size(); i++)
-        {
-            const ClipperLib::IntPoint &ip = path[i];
-            poly[i].x = ip.X / clipperScale;
-            poly[i].y = ip.Y / clipperScale;
-        }
+        AddPolyPath(poly, path, clipperScale);
+//        poly.Init(path.size());
+//        for (size_t i = 0; i < path.size(); i++)
+//        {
+//            const ClipperLib::IntPoint &ip = path[i];
+//            poly[i].x = ip.X / clipperScale;
+//            poly[i].y = ip.Y / clipperScale;
+//        }
         poly.SetHole(false);
         ROB_ASSERT(poly.GetOrientation() == TPPL_CCW);
 

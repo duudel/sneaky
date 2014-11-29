@@ -110,9 +110,9 @@ namespace sneaky
 
         m_input.SetView(&m_view);
 
-        static uint32_t seed = 2013034;
-
-        m_random.Seed(seed);
+//        static uint32_t seed = 2013034;
+//
+//        m_random.Seed(seed);
         CreateWorld();
 //        if (m_nav.GetMesh().GetFaceCount() < 10)
 //        {
