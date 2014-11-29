@@ -59,7 +59,8 @@
 			<Add directory="src" />
 			<Add directory="3rdparty/liquidfun/Box2D" />
 			<Add directory="3rdparty/Clipper" />
-			<Add directory="3rdparty/poly2tri/poly2tri/" />
+			<Add directory="3rdparty/poly2tri/poly2tri" />
+			<Add directory="3rdparty/polypartition" />
 		</Compiler>
 		<Linker>
 			<Add option="-lmingw32" />
@@ -194,6 +195,8 @@
 		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep.h" />
 		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.cc" />
 		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.h" />
+		<Unit filename="3rdparty/polypartition/polypartition.cpp" />
+		<Unit filename="3rdparty/polypartition/polypartition.h" />
 		<Unit filename="TODO.txt" />
 		<Unit filename="src/rob/Assert.cpp" />
 		<Unit filename="src/rob/Assert.h" />

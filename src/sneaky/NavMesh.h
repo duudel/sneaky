@@ -72,14 +72,23 @@ namespace sneaky
         vec2f GetFaceCenter(const Face &f) const;
         vec2f GetEdgeCenter(index_t f, int edge) const;
         float GetDist(index_t f0, index_t f1) const;
+        float GetDist(index_t f0, index_t f1, int edge) const;
 
         void GetPortalPoints(const index_t from, const index_t to, vec2f &left, vec2f &right) const;
 
+        ClipperLib::Paths m_solids;
+        ClipperLib::Paths m_holes;
+
     private:
+        void TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
+        void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
+
+        void Refine();
+
         static bool TestPoint(const b2World *world, float x, float y);
         Vert* AddVertex(float x, float y, bool active);
         Vert* GetVertex(float x, float y, index_t *index);
-        index_t AddFace(index_t i0, index_t i1, index_t i2, bool active);
+        index_t AddFace(index_t i0, index_t i1, index_t i2);
         bool FaceContainsPoint(const Face &face, const vec2f &v) const;
         bool FaceHasEdge(const Face &face, index_t v0, index_t v1);
         void SetNeighbour(index_t fi, int ni, index_t fj, index_t v0, index_t v1);

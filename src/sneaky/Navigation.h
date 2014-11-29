@@ -59,6 +59,8 @@ namespace sneaky
         {
             float dist;
             index_t prev;
+            vec2f pos;
+            bool posCalculated;
             bool closed;
         };
 

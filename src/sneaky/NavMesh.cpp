@@ -7,6 +7,7 @@
 
 #include <clipper.hpp>
 #include <poly2tri.h>
+#include <polypartition.h>
 
 namespace sneaky
 {
@@ -45,11 +46,260 @@ namespace sneaky
         m_vertices = alloc.AllocateArray<Vert>(MAX_VERTICES);
     }
 
+    void ClassifyPaths(const ClipperLib::Paths &paths, ClipperLib::Paths &solids, ClipperLib::Paths &holes)
+    {
+        solids.reserve(paths.size() / 2);
+        holes.reserve(paths.size() / 2);
+        for (size_t pl = 0; pl < paths.size(); pl++)
+        {
+            const ClipperLib::Path &path = paths[pl];
+
+            int orientation = 0;
+            for (size_t p = 1; p < path.size(); p++)
+            {
+                const ClipperLib::IntPoint &ip0 = path[p - 1];
+                const ClipperLib::IntPoint &ip1 = path[p];
+                orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
+            }
+            const ClipperLib::IntPoint &ip0 = path[path.size() - 1];
+            const ClipperLib::IntPoint &ip1 = path[0];
+            orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
+
+            const bool isHole = (orientation > 0);
+            if (isHole)
+                holes.push_back(path);
+            else
+                solids.push_back(path);
+        }
+    }
+
+    static inline float TriArea(const vec2f &a, const vec2f &b, const vec2f &c)
+    {
+        const vec2f ab = b - a;
+        const vec2f ac = c - a;
+        return (ac.x * ab.y - ab.x * ac.y);
+    }
+
+    void AddPolyPath(TPPLPoly &poly, const ClipperLib::Path &path, const float clipperScale)
+    {
+        const float steinerStep = 12.0f;
+        size_t pathSize = 0;
+        {
+            for (size_t p = 1; p < path.size(); p++)
+            {
+                const ClipperLib::IntPoint &ip0 = path[p - 1];
+                const ClipperLib::IntPoint &ip1 = path[p];
+                const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+                const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+                vec2f v = p1 - p0;
+                const int cnt = int(v.Length() / steinerStep) + 1;
+                pathSize += cnt;
+            }
+            const ClipperLib::IntPoint &ip0 = path[path.size() - 1];
+            const ClipperLib::IntPoint &ip1 = path[0];
+            const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+            const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+            vec2f v = p1 - p0;
+            const int cnt = int(v.Length() / steinerStep) + 1;
+            pathSize += cnt;
+        }
+
+        poly.Init(pathSize);
+
+        size_t n = 0;
+        for (size_t p = 1; p < path.size(); p++)
+        {
+            const ClipperLib::IntPoint &ip0 = path[p - 1];
+            const ClipperLib::IntPoint &ip1 = path[p];
+            const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+            const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+            vec2f v = p1 - p0;
+            const int cnt = int(v.Length() / steinerStep) + 1;
+            v /= cnt;
+            for (int i = 0; i < cnt; i++)
+            {
+                const vec2f sp = p0 + v * i;
+                poly[n].x = sp.x;
+                poly[n].y = sp.y;
+                n++;
+            }
+        }
+        const ClipperLib::IntPoint &ip0 = path[path.size() - 1];
+        const ClipperLib::IntPoint &ip1 = path[0];
+        const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+        const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+        vec2f v = p1 - p0;
+        const int cnt = int(v.Length() / steinerStep) + 1;
+        v /= cnt;
+        for (int i = 0; i < cnt; i++)
+        {
+            const vec2f sp = p0 + v * i;
+            poly[n].x = sp.x;
+            poly[n].y = sp.y;
+            n++;
+        }
+    }
+
+    void NavMesh::TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale)
+    {
+        TPPLPartition partition;
+        std::list<TPPLPoly> polys;
+        polys.resize(holes.size() + 1);
+
+        std::list<TPPLPoly>::iterator polyIt = polys.begin();
+        TPPLPoly &poly = *polyIt;
+        AddPolyPath(poly, path, clipperScale);
+//        poly.Init(path.size());
+//        for (size_t i = 0; i < path.size(); i++)
+//        {
+//            const ClipperLib::IntPoint &ip = path[i];
+//            poly[i].x = ip.X / clipperScale;
+//            poly[i].y = ip.Y / clipperScale;
+//        }
+
+        polyIt++;
+        for (size_t h = 0; h < holes.size(); h++, ++polyIt)
+        {
+            const ClipperLib::Path &holePath = holes[h];
+            TPPLPoly &hole = *polyIt;
+            hole.Init(holePath.size());
+            hole.SetHole(true);
+//            AddPolyPath(hole, holePath, clipperScale);
+            for (size_t i = 0; i < holePath.size(); i++)
+            {
+                const ClipperLib::IntPoint &ip = holePath[i];
+                hole[i].x = ip.X / clipperScale;
+                hole[i].y = ip.Y / clipperScale;
+            }
+        }
+
+        std::list<TPPLPoly> tris;
+        partition.Triangulate_EC(&polys, &tris);
+
+        std::list<TPPLPoly>::iterator it;
+        for (it = tris.begin(); it != tris.end(); ++it)
+        {
+            TPPLPoly &tri = *it;
+
+            const vec2f p0(tri[0].x, tri[0].y);
+            const vec2f p1(tri[1].x, tri[1].y);
+            const vec2f p2(tri[2].x, tri[2].y);
+
+//            if (TriArea(vec2f(p0->x, p0->y), vec2f(p1->x, p1->y), vec2f(p2->x, p2->y)) > 0.0f) continue;
+
+            index_t i0, i1, i2;
+            GetVertex(p0.x, p0.y, &i0);
+            GetVertex(p1.x, p1.y, &i1);
+            GetVertex(p2.x, p2.y, &i2);
+            AddFace(i0, i1, i2);
+        }
+    }
+
+    void NavMesh::TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale)
+    {
+        using namespace ClipperLib;
+        const float steinerStep = 12.0f;
+        std::vector<p2t::Point*> allPoints;
+        std::vector<p2t::Point*> holePoints;
+
+        std::vector<p2t::Point*> polyLine;
+        {
+            for (size_t p = 1; p < path.size(); p++)
+            {
+                const IntPoint &ip0 = path[p - 1];
+                const IntPoint &ip1 = path[p];
+                const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+                const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+                vec2f v = p1 - p0;
+                const int cnt = int(v.Length() / steinerStep) + 1;
+                v /= cnt;
+                for (int i = 0; i < cnt; i++)
+                {
+                    const vec2f sp = p0 + v * i;
+                    p2t::Point *point = new p2t::Point(sp.x, sp.y);
+                    polyLine.push_back(point);
+                }
+            }
+            const IntPoint &ip0 = path[path.size() - 1];
+            const IntPoint &ip1 = path[0];
+            const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
+            const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
+
+            vec2f v = p1 - p0;
+            const int cnt = int(v.Length() / steinerStep) + 1;
+            v /= cnt;
+            for (int i = 0; i < cnt; i++)
+            {
+                const vec2f sp = p0 + v * i;
+                p2t::Point *point = new p2t::Point(sp.x, sp.y);
+                polyLine.push_back(point);
+            }
+        }
+
+        p2t::CDT cdt(polyLine);
+
+        for (size_t i = 0; i < holes.size(); i++)
+        {
+            const Path &hole = holes[i];
+            polyLine.clear();
+            for (size_t p = 0; p < hole.size(); p++)
+            {
+                const IntPoint &ip = hole[p];
+                p2t::Point *point = new p2t::Point(ip.X / clipperScale, ip.Y / clipperScale);
+                polyLine.push_back(point);
+                holePoints.push_back(point);
+            }
+            cdt.AddHole(polyLine);
+        }
+
+        cdt.Triangulate();
+
+        std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
+        std::vector<p2t::Triangle*>::iterator it;
+//        std::list<p2t::Triangle*> tris = cdt.GetMap();
+//        std::list<p2t::Triangle*>::iterator it;
+        for (it = tris.begin(); it != tris.end(); ++it)
+        {
+            p2t::Triangle *tri = *it;
+
+            const p2t::Point *p0 = tri->GetPoint(0);
+            const p2t::Point *p1 = tri->GetPoint(1);
+            const p2t::Point *p2 = tri->GetPoint(2);
+
+//            bool isHole0 = false;
+//            bool isHole1 = false;
+//            bool isHole2 = false;
+//            for (size_t i = 0; i < holePoints.size() && !(isHole0 && isHole1 && isHole0); i++)
+//            {
+//                if (p0 == holePoints[i]) isHole0 = true;
+//                if (p1 == holePoints[i]) isHole1 = true;
+//                if (p2 == holePoints[i]) isHole2 = true;
+//            }
+//            if (isHole0 && isHole1 && isHole2) continue;
+
+            if (TriArea(vec2f(p0->x, p0->y), vec2f(p1->x, p1->y), vec2f(p2->x, p2->y)) > 0.0f) continue;
+
+            index_t i0, i1, i2;
+            GetVertex(p0->x, p0->y, &i0);
+            GetVertex(p1->x, p1->y, &i1);
+            GetVertex(p2->x, p2->y, &i2);
+            AddFace(i0, i1, i2);
+        }
+    }
+
     void NavMesh::Create(const b2World *world, const float halfW, const float halfH, const float agentRadius)
     {
         m_gridSz = agentRadius;
         m_halfW = halfW;
         m_halfH = halfH;
+
+        for (size_t i = 0; i < MAX_VERTICES; i++)
+            m_vertCache.m_v[i] = nullptr;
 
         const float scale = 10.0f;
         const float wW = halfW * scale;
@@ -101,138 +351,158 @@ namespace sneaky
 
         ClipperOffset clipperOfft(2.0, agentRadius);
         clipperOfft.AddPaths(paths, jtRound, etClosedPolygon);
+        paths.clear();
         clipperOfft.Execute(paths, -agentRadius * scale);
 
-        const float steinerStep = 12.0f;
+        Paths solids, holes;
+        ClassifyPaths(paths, solids, holes);
+        m_solids = solids;
+        m_holes = holes;
 
-        std::vector<bool> isHole; isHole.resize(paths.size(), false);
-        std::vector<p2t::Point*> polyLine;
-        for (size_t pl = 0; pl < paths.size(); pl++)
+        for (size_t s = 0; s < solids.size(); s++)
         {
-            const Path &path = paths[pl];
-            int orientation = 0;
+            const Path &solid = solids[s];
+            size_t start = m_faceCount;
+
+            TriangulatePath(solid, holes, scale);
+
+            for (size_t i = start; i < m_faceCount; i++)
             {
-                for (size_t p = 1; p < path.size(); p++)
+                Face &face = m_faces[i];
+                const index_t i0 = face.vertices[0];
+                const index_t i1 = face.vertices[1];
+                const index_t i2 = face.vertices[2];
+                for (size_t j = i + 1; j < m_faceCount; j++)
                 {
-                    const IntPoint &ip0 = path[p - 1];
-                    const IntPoint &ip1 = path[p];
-                    orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
-                }
-                const IntPoint &ip0 = path[path.size() - 1];
-                const IntPoint &ip1 = path[0];
-                orientation += (ip1.X - ip0.X) * (ip1.Y + ip0.Y);
-            }
-
-            if (orientation > 0)
-            {
-                isHole[pl] = true;
-                continue;
-            }
-
-            for (size_t p = 1; p < path.size(); p++)
-            {
-                const IntPoint &ip0 = path[p - 1];
-                const IntPoint &ip1 = path[p];
-                const vec2f p0 = vec2f(ip0.X, ip0.Y) / scale;
-                const vec2f p1 = vec2f(ip1.X, ip1.Y) / scale;
-
-                p2t::Point *point = new p2t::Point(ip0.X / scale, ip0.Y / scale);
-                polyLine.push_back(point);
-
-                vec2f v = p1 - p0;
-                const int cnt = v.Length() / steinerStep;
-                v /= cnt;
-                for (int i = 1; i < cnt; i++)
-                {
-                    const vec2f sp = p0 + v * i;
-                    p2t::Point *point = new p2t::Point(sp.x, sp.y);
-                    polyLine.push_back(point);
+                    Face &other = m_faces[j];
+                    if (FaceHasEdge(other, i0, i1))
+                    {
+                        SetNeighbour(i, 0, j, i0, i1);
+                    }
+                    else if (FaceHasEdge(other, i1, i2))
+                    {
+                        SetNeighbour(i, 1, j, i1, i2);
+                    }
+                    else if (FaceHasEdge(other, i2, i0))
+                    {
+                        SetNeighbour(i, 2, j, i2, i0);
+                    }
                 }
             }
-            const IntPoint &ip0 = path[path.size() - 1];
-            const IntPoint &ip1 = path[0];
-            const vec2f p0 = vec2f(ip0.X, ip0.Y) / scale;
-            const vec2f p1 = vec2f(ip1.X, ip1.Y) / scale;
-
-            p2t::Point *point = new p2t::Point(ip0.X / scale, ip0.Y / scale);
-            polyLine.push_back(point);
-
-            vec2f v = p1 - p0;
-            const int cnt = v.Length() / steinerStep;
-            v /= cnt;
-            for (int i = 1; i < cnt; i++)
-            {
-                const vec2f sp = p0 + v * i;
-                p2t::Point *point = new p2t::Point(sp.x, sp.y);
-                polyLine.push_back(point);
-            }
         }
+        Refine();
 
-        p2t::CDT cdt(polyLine);
-
-        for (size_t i = 0; i < paths.size(); i++)
-        {
-            if (!isHole[i]) continue;
-
-            Path &path = paths[i];
-            polyLine.clear();
-            for (size_t p = 0; p < path.size(); p++)
-            {
-                const IntPoint &ip = path[p];
-                p2t::Point *point = new p2t::Point(ip.X / scale, ip.Y / scale);
-                polyLine.push_back(point);
-            }
-            cdt.AddHole(polyLine);
-        }
-
-//        const int ptsX = int(halfW * 2.0f / steinerStep);
-//        const int ptsY = int(halfH * 2.0f / steinerStep);
-//        for (int y = 1; y < ptsY; y++)
+//        for (size_t i = 0; i < m_faceCount; i++)
 //        {
-//            for (int x = 1; x < ptsX; x++)
-//                cdt.AddPoint(new p2t::Point(-halfW + steinerStep * x, -halfH + steinerStep * y));
+//            Face &face = m_faces[i];
+//            const index_t i0 = face.vertices[0];
+//            const index_t i1 = face.vertices[1];
+//            const index_t i2 = face.vertices[2];
+//            for (size_t j = i + 1; j < m_faceCount; j++)
+//            {
+//                Face &other = m_faces[j];
+//                if (FaceHasEdge(other, i0, i1))
+//                {
+//                    SetNeighbour(i, 0, j, i0, i1);
+//                }
+//                else if (FaceHasEdge(other, i1, i2))
+//                {
+//                    SetNeighbour(i, 1, j, i1, i2);
+//                }
+//                else if (FaceHasEdge(other, i2, i0))
+//                {
+//                    SetNeighbour(i, 2, j, i2, i0);
+//                }
+//            }
 //        }
+    }
 
-        cdt.Triangulate();
-
-        for (size_t i = 0; i < MAX_VERTICES; i++)
-            m_vertCache.m_v[i] = nullptr;
-
-        std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
-        for (size_t t = 0; t < tris.size(); t++)
+    void NavMesh::Refine()
+    {
+        static const int prevV[] = { 2, 0, 1 };
+        static const int nextV[] = { 1, 2, 0 };
+        for (index_t f = 0; f < m_faceCount; f++)
         {
-            p2t::Triangle *tri = tris[t];
-            p2t::Point *p0 = tri->GetPoint(0);
-            p2t::Point *p1 = tri->GetPoint(1);
-            p2t::Point *p2 = tri->GetPoint(2);
-
-            index_t i0, i1, i2;
-            GetVertex(p0->x, p0->y, &i0);
-            GetVertex(p1->x, p1->y, &i1);
-            GetVertex(p2->x, p2->y, &i2);
-            AddFace(i0, i1, i2, true);
-        }
-
-        for (size_t i = 0; i < m_faceCount; i++)
-        {
-            Face &face = m_faces[i];
-            const index_t i0 = face.vertices[0];
-            const index_t i1 = face.vertices[1];
-            const index_t i2 = face.vertices[2];
-            for (size_t j = i + 1; j < m_faceCount; j++)
+            Face &face = m_faces[f];
+//            const index_t i0 = face.vertices[0];
+//            const index_t i1 = face.vertices[1];
+//            const index_t i2 = face.vertices[2];
+//            const vec2f v0(m_vertices[i0].x, m_vertices[i0].y);
+//            const vec2f v1(m_vertices[i1].x, m_vertices[i1].y);
+//            const vec2f v2(m_vertices[i2].x, m_vertices[i2].y);
+//            const float len0 = rob::Distance(v0, v1);
+//            const float len1 = rob::Distance(v1, v2);
+//            const float len2 = rob::Distance(v2, v0);
+            for (int ni = 0; ni < 3; ni++)
             {
-                Face &other = m_faces[j];
-                if (FaceHasEdge(other, i0, i1))
+                if (face.neighbours[ni] != InvalidIndex)
                 {
-                    SetNeighbour(i, 0, j, i0, i1);
-                }
-                else if (FaceHasEdge(other, i1, i2))
-                {
-                    SetNeighbour(i, 1, j, i1, i2);
-                }
-                else if (FaceHasEdge(other, i2, i0))
-                {
-                    SetNeighbour(i, 2, j, i2, i0);
+                    //      v2i
+                    //      /\          |
+                    //     /  \         |
+                    //v0i /    \ v1i
+                    //    ------
+                    //nv1i\    / nv0i
+                    //     \  /         |
+                    //      \/          |
+                    //     nv2i
+
+                    const index_t n = face.neighbours[ni];
+                    Face &neighbour = m_faces[n];
+
+                    const int nni = (neighbour.neighbours[0] == f ? 0 : (neighbour.neighbours[1] == f ? 1 : 2));
+
+                    const int v0i = ni;
+                    const int v1i = nextV[v0i];
+                    const int v2i = nextV[v1i];
+
+                    const int nv0i = nni;
+                    const int nv1i = nextV[nv0i];
+                    const int nv2i = nextV[nv1i];
+
+                    const index_t v0 = face.vertices[v0i];
+                    const index_t v1 = face.vertices[v1i];
+                    const vec2f vec0(m_vertices[v0].x, m_vertices[v0].y);
+                    const vec2f vec1(m_vertices[v1].x, m_vertices[v1].y);
+                    const float edgeLen = rob::Distance(vec0, vec1);
+
+                    const index_t v2 = face.vertices[v2i];
+                    const index_t nv2 = neighbour.vertices[nv2i];
+                    const vec2f vec2(m_vertices[v2].x, m_vertices[v2].y);
+                    const vec2f nvec2(m_vertices[nv2].x, m_vertices[nv2].y);
+                    const float altLen = rob::Distance(vec2, nvec2);
+
+                    const float area0 = TriArea(vec0, nvec2, vec2);
+                    const float area1 = TriArea(vec1, vec2, nvec2);
+
+                    if (area0 > 0.0f && area1 > 0.0f && edgeLen > 1.1f * altLen)
+                    {
+                        face.flags = 1;
+                        neighbour.flags = 1;
+//                        continue;
+
+                        const index_t fn_p = face.neighbours[prevV[ni]];
+                        const index_t fn_n = face.neighbours[nextV[ni]];
+                        const index_t nn_p = neighbour.neighbours[prevV[nni]];
+                        const index_t nn_n = neighbour.neighbours[nextV[nni]];
+
+                        face.vertices[0] = v0;
+                        face.vertices[1] = nv2;
+                        face.vertices[2] = v2;
+
+                        neighbour.vertices[0] = v1;
+                        neighbour.vertices[1] = v2;
+                        neighbour.vertices[2] = nv2;
+
+                        SetNeighbour(f, 0, nn_n, v0, nv2);
+                        SetNeighbour(f, 1, n, nv2, v2);
+                        SetNeighbour(f, 2, fn_p, v2, v0);
+
+                        SetNeighbour(n, 0, fn_n, v1, v2);
+                        SetNeighbour(n, 1, f, v2, nv2);
+                        SetNeighbour(n, 2, nn_p, nv2, v1);
+                        continue;
+                    }
                 }
             }
         }
@@ -333,8 +603,8 @@ namespace sneaky
                     face1Active &= !TestPoint(world, c.x, c.y);
                 }
 
-                const index_t fi0 = AddFace(i0, i1, i2, face0Active);
-                const index_t fi1 = AddFace(i2, i3, i0, face1Active);
+                const index_t fi0 = AddFace(i0, i1, i2); //, face0Active);
+                const index_t fi1 = AddFace(i2, i3, i0); //, face1Active);
 
                 const index_t fi = (y * sideFacesX + x) * 2;
 
@@ -511,9 +781,10 @@ namespace sneaky
 
     vec2f NavMesh::GetEdgeCenter(index_t f, int edge) const
     {
+        static const int nextEdgeV[] = { 1, 2, 0 };
         const Face &face = GetFace(f);
         const Vert &v0 = GetVertex(face.vertices[edge]);
-        const Vert &v1 = GetVertex(face.vertices[((edge + 2) & 3) - 1]);
+        const Vert &v1 = GetVertex(face.vertices[nextEdgeV[edge]]);
         return vec2f(v0.x + v1.x, v0.y + v1.y) / 2.0f;
     }
 
@@ -522,6 +793,23 @@ namespace sneaky
         const Face &f0 = m_faces[fi0];
         const Face &f1 = m_faces[fi1];
         return (GetFaceCenter(f0) - GetFaceCenter(f1)).Length();
+    }
+
+    bool FaceHasVertex(const NavMesh::Face &face, const index_t v)
+    {
+        return face.vertices[0] == v || face.vertices[1] == v || face.vertices[2] == v;
+    }
+
+    float NavMesh::GetDist(index_t fi0, index_t fi1, int edge) const
+    {
+        static const int nextEdge[] = { 1, 2, 0 };
+        const Face &f0 = m_faces[fi0];
+        const Face &f1 = m_faces[fi1];
+        if (FaceHasVertex(f1, f0.vertices[edge]) || FaceHasVertex(f1, f0.vertices[nextEdge[edge]]))
+        {
+            return 0.0f;
+        }
+        return GetDist(fi0, fi1);
     }
 
     bool NavMesh::TestPoint(const b2World *world, float x, float y)
@@ -596,14 +884,7 @@ namespace sneaky
         return v;
     }
 
-    inline float TriArea(const vec2f a, const vec2f &b, const vec2f &c)
-    {
-        const vec2f ab = b - a;
-        const vec2f ac = c - a;
-        return (ac.x * ab.y - ab.x * ac.y);
-    }
-
-    index_t NavMesh::AddFace(index_t i0, index_t i1, index_t i2, bool active)
+    index_t NavMesh::AddFace(index_t i0, index_t i1, index_t i2)
     {
         ROB_ASSERT(m_faceCount < MAX_FACES);
         const index_t faceI = m_faceCount++;
@@ -623,7 +904,7 @@ namespace sneaky
         }
 
         for (size_t i = 0; i < 3; i++) f.neighbours[i] = InvalidIndex;
-        f.flags = active ? FaceActive : 0;
+        f.flags = 0;
         return faceI;
     }
 

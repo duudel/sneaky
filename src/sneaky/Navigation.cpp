@@ -109,6 +109,7 @@ namespace sneaky
 //        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
 
         m_path.len = 0;
+        if (startFace == endFace) return true;
 
         const float inf = 1e6f;
         const int nodeCount = m_mesh.GetFaceCount();
@@ -119,10 +120,17 @@ namespace sneaky
         {
             m_nodes[i].dist = inf;
             m_nodes[i].prev = NavMesh::InvalidIndex;
+            m_nodes[i].pos.x = 0.0f;
+            m_nodes[i].pos.y = 0.0f;
+            m_nodes[i].posCalculated = false;
             m_nodes[i].closed = false;
         }
 
         m_nodes[startFace].dist = 0.0f;
+        m_nodes[startFace].pos = start;
+        m_nodes[startFace].posCalculated = true;
+        m_nodes[endFace].pos = end;
+        m_nodes[endFace].posCalculated = true;
 
         index_t bestFace = startFace;
         float bestHeuristicCost = rob::Distance2(start, end);
@@ -161,10 +169,16 @@ namespace sneaky
                     continue;
                 if (m_nodes[v].closed) // TODO: This is bad if the navmesh is not a grid (maybe)
                     continue;
-//                if ((m_mesh.GetFace(v).flags & NavMesh::FaceActive) == 0)
-//                    continue;
 
-                const float alt = d + m_mesh.GetDist(u, v);
+                if (!m_nodes[v].posCalculated)
+                {
+                    m_nodes[v].pos = m_mesh.GetEdgeCenter(u, i);
+                    m_nodes[v].posCalculated = true;
+                }
+
+//                const float alt = d + m_mesh.GetDist(u, v);
+//                const float alt = d + m_mesh.GetDist(u, v, i);
+                const float alt = d + rob::Distance(m_nodes[u].pos, m_nodes[v].pos);
                 const float heuristic = rob::Distance2(m_mesh.GetFaceCenter(m_mesh.GetFace(v)), end);
 
                 if (alt < m_nodes[v].dist)
@@ -223,7 +237,7 @@ namespace sneaky
         }
     };
 
-    inline float TriArea(const vec2f a, const vec2f &b, const vec2f &c)
+    static inline float TriArea(const vec2f &a, const vec2f &b, const vec2f &c)
     {
         const vec2f ab = b - a;
         const vec2f ac = c - a;
@@ -242,8 +256,6 @@ namespace sneaky
             int leftInd = 0;
             int rightInd = 0;
 
-//            index_t leftFace = m_path.path[0];
-//            index_t rightFace = m_path.path[0];
             for (size_t i = 0; i < m_path.len; i++)
             {
                 vec2f left, right;
@@ -262,20 +274,10 @@ namespace sneaky
                     if (vec2f::Equals(apex, portalRight) || TriArea(apex, portalLeft, right) > 0.0f)
                     {
                         portalRight = right;
-//                        rightFace = (i + 1 < m_path.len) ? m_path.path[i + 1] : NavMesh::InvalidIndex;
                         rightInd = i;
                     }
                     else
                     {
-//                        // Append portals along the current straight path segment.
-//                        if (options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS))
-//                        {
-//                            stat = appendPortals(apexIndex, leftIndex, portalLeft, path,
-//                            straightPath, straightPathFlags, straightPathRefs,
-//                            straightPathCount, maxStraightPath, options);
-//                            if (stat != DT_IN_PROGRESS)
-//                            return stat;
-//                        }
                         apex = portalLeft;
                         apexInd = leftInd;
 
@@ -295,7 +297,6 @@ namespace sneaky
                     if (vec2f::Equals(apex, portalLeft) || TriArea(apex, portalRight, left) < 0.0f)
                     {
                         portalLeft = left;
-//                        leftFace = (i + 1 < m_path.len) ? m_path.path[i + 1] : NavMesh::InvalidIndex;
                         leftInd = i;
                     }
                     else
@@ -450,25 +451,34 @@ namespace sneaky
         return rayCast.body;
     }
 
+
+    void RenderClipperPath(rob::Renderer *renderer, const ClipperLib::Path &path)
+    {
+        for (size_t i = 1; i < path.size(); i++)
+        {
+            const ClipperLib::IntPoint &p0 = path[i - 1];
+            const ClipperLib::IntPoint &p1 = path[i];
+
+            const vec2f v0 = vec2f(p0.X, p0.Y) / 10.0f;
+            const vec2f v1 = vec2f(p1.X, p1.Y) / 10.0f;
+
+            renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+        }
+        const ClipperLib::IntPoint &p0 = path[path.size() - 1];
+        const ClipperLib::IntPoint &p1 = path[0];
+
+        const vec2f v0 = vec2f(p0.X, p0.Y) / 10.0f;
+        const vec2f v1 = vec2f(p1.X, p1.Y) / 10.0f;
+
+        renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
+    }
+
     void Navigation::RenderMesh(rob::Renderer *renderer) const
     {
         renderer->SetModel(mat4f::Identity);
         renderer->BindColorShader();
-//        renderer->SetColor(rob::Color::LightBlue);
 
-//        const size_t vertCount = m_mesh.GetVertexCount();
-//        for (size_t i = 0; i < vertCount; i+=2)
-//        {
-//            const NavMesh::Vert &v = m_mesh.GetVertex(i);
-////            if (v.x >= -20.0f && v.x < 20.0f)
-//            if (v.flags & NavMesh::VertActive)
-//                renderer->SetColor(rob::Color(0.0f, 0.5f, 1.0f));
-//            else
-//                renderer->SetColor(rob::Color::Red);
-//            renderer->DrawFilledCircle(v.x, v.y, 0.10f);
-//        }
-
-//        renderer->SetColor(rob::Color::LightGreen);
+        renderer->SetColor(rob::Color::LightGreen);
         const size_t faceCount = m_mesh.GetFaceCount();
         for (size_t i = 0; i < faceCount; i++)
         {
@@ -477,11 +487,10 @@ namespace sneaky
             const NavMesh::Vert &v1 = m_mesh.GetVertex(f.vertices[1]);
             const NavMesh::Vert &v2 = m_mesh.GetVertex(f.vertices[2]);
 
-            if (f.flags & NavMesh::FaceActive)
-                renderer->SetColor(rob::Color::LightGreen);
-            else
-                continue;
-//                renderer->SetColor(rob::Color::Red);
+        if (f.flags == 0)
+            renderer->SetColor(rob::Color::LightGreen);
+        else
+            renderer->SetColor(rob::Color::Yellow);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
@@ -520,6 +529,18 @@ namespace sneaky
                 renderer->DrawLine(v2.x, v2.y, v0.x, v0.y);
             }
         }
+
+//        renderer->SetColor(rob::Color::Yellow);
+//        for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
+//        {
+//            RenderClipperPath(renderer, m_mesh.m_solids[i]);
+//        }
+
+//        renderer->SetColor(rob::Color::Red);
+//        for (size_t i = 0; i < m_mesh.m_holes.size(); i++)
+//        {
+//            RenderClipperPath(renderer, m_mesh.m_holes[i]);
+//        }
     }
 
     void Navigation::RenderPath(rob::Renderer *renderer, const NavPath *path) const
