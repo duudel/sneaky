@@ -106,7 +106,7 @@ namespace sneaky
 
     bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace)
     {
-//        rob::log::Debug("Nav: Start node: ", startFace, ", end node: ", endFace);
+        rob::log::Info("Nav: Start node: ", startFace, ", end node: ", endFace, ", faces:", m_mesh.GetFaceCount());
 
         m_path.len = 0;
         if (startFace == endFace) return true;
@@ -116,7 +116,7 @@ namespace sneaky
 
         int n = nodeCount;
 
-        for(int i = 0; i < nodeCount; ++i)
+        for (int i = 0; i < nodeCount; i++)
         {
             m_nodes[i].dist = inf;
             m_nodes[i].prev = NavMesh::InvalidIndex;
@@ -140,7 +140,7 @@ namespace sneaky
         {
             index_t u = 0;
             float d = inf;
-            for(int i = 0; i < nodeCount; ++i)
+            for (int i = 0; i < nodeCount; i++)
             {
                 if (m_nodes[i].closed) continue;
                 if (m_nodes[i].dist < d)
@@ -153,6 +153,8 @@ namespace sneaky
             m_nodes[u].closed = true;
             n--;
 
+//            rob::log::Info("Nav: node: ", u, ", dist: ", d);
+
             if(u == endFace) break;
             if(d > inf - 100.0f)
             {
@@ -161,6 +163,9 @@ namespace sneaky
                 endFace = bestFace;
                 break;
             }
+
+//            m_nodes[u].closed = true;
+//            n--;
 
             for (int i = 0; i < 3; i++)
             {
@@ -185,6 +190,7 @@ namespace sneaky
                 {
                     m_nodes[v].dist = alt;
                     m_nodes[v].prev = u;
+//                    rob::log::Info("Nav: node: ", v, ", dist: ", alt);
                 }
                 if (heuristic < bestHeuristicCost)
                 {
@@ -211,7 +217,7 @@ namespace sneaky
             u = m_nodes[u].prev;
         }
 
-//        rob::log::Debug("Nav: Nodes in node path: ", m_path.len);
+        rob::log::Info("Nav: Nodes in node path: ", m_path.len);
 
         return found;
     }

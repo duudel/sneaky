@@ -424,15 +424,6 @@ namespace sneaky
         for (index_t f = 0; f < m_faceCount; f++)
         {
             Face &face = m_faces[f];
-//            const index_t i0 = face.vertices[0];
-//            const index_t i1 = face.vertices[1];
-//            const index_t i2 = face.vertices[2];
-//            const vec2f v0(m_vertices[i0].x, m_vertices[i0].y);
-//            const vec2f v1(m_vertices[i1].x, m_vertices[i1].y);
-//            const vec2f v2(m_vertices[i2].x, m_vertices[i2].y);
-//            const float len0 = rob::Distance(v0, v1);
-//            const float len1 = rob::Distance(v1, v2);
-//            const float len2 = rob::Distance(v2, v0);
             for (int ni = 0; ni < 3; ni++)
             {
                 if (face.neighbours[ni] != InvalidIndex)
@@ -835,14 +826,14 @@ namespace sneaky
         return &v;
     }
 
-    NavMesh::Vert* NavMesh::GetVertex(float x, float y, index_t *index)
+    NavMesh::Vert* NavMesh::GetVertex(const float x, const float y, index_t *index)
     {
         const index_t HASH_MASK = MAX_VERTICES - 1;
         const float scale = 10.0f;
-        int hx = x * scale;
-        int hy = y * scale;
-        x = hx / scale;
-        y = hy / scale;
+        const int hx = x * scale;
+        const int hy = y * scale;
+        const float vx = hx / scale;
+        const float vy = hy / scale;
 
         index_t hash = (hx * 32786 + hy) & HASH_MASK;
 
@@ -853,7 +844,7 @@ namespace sneaky
             while (v && hash < MAX_VERTICES)
             {
                 v = m_vertCache.m_v[hash];
-                if (v && (v->x != x || v->y != y))
+                if (v && !vec2f::Equals(vec2f(v->x, v->y), vec2f(vx, vy), scale))
                 {
                     hash++;
                 }
@@ -863,7 +854,7 @@ namespace sneaky
             while (v && hash < hstart)
             {
                 v = m_vertCache.m_v[hash];
-                if (v && (v->x != x || v->y != y))
+                if (v && !vec2f::Equals(vec2f(v->x, v->y), vec2f(vx, vy), scale))
                 {
                     hash++;
                 }
@@ -876,7 +867,7 @@ namespace sneaky
 
         if (!v)
         {
-            v = AddVertex(x, y, true);
+            v = AddVertex(vx, vy, true);
             m_vertCache.m_v[hash] = v;
         }
 
