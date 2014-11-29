@@ -717,7 +717,7 @@ namespace sneaky
         const float va = d2 * d5 - d4 * d3;
         if (va <= 0.0f && (d3 - d2) >= 0.0f && (d4 - d5) >= 0.0f)
         {
-            const float t = (d3 - d2) / ((d3 - d2) - (d4 - d5));
+            const float t = (d3 - d2) / ((d3 - d2) + (d4 - d5));
             return v1 + t * (v2 - v1);
         }
 
