@@ -6,7 +6,6 @@
 #include "rob/Log.h"
 
 #include <clipper.hpp>
-#include <poly2tri.h>
 #include <polypartition.h>
 
 namespace sneaky
@@ -227,124 +226,30 @@ namespace sneaky
             const vec2f p1(tri[1].x, tri[1].y);
             const vec2f p2(tri[2].x, tri[2].y);
 
-//            if (TriArea(vec2f(p0->x, p0->y), vec2f(p1->x, p1->y), vec2f(p2->x, p2->y)) > 0.0f) continue;
-
             index_t i0, i1, i2;
             GetVertex(p0.x, p0.y, &i0);
             GetVertex(p1.x, p1.y, &i1);
             GetVertex(p2.x, p2.y, &i2);
-            AddFace(i0, i1, i2);
+
+            if (TriArea(p0, p1, p2) > 0.0f)
+            {
+                rob::log::Warning("NavMesh::Triangulate: CW triangle orientation form TPPL");
+                AddFace(i2, i1, i0);
+            }
+            else
+            {
+                AddFace(i0, i1, i2);
+            }
         }
     }
 
-    void NavMesh::TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale)
+    void NavMesh::CreateClipperPaths(ClipperLib::Clipper &clipper, const b2World *world, const float halfW, const float halfH, const float clipperScale)
     {
         using namespace ClipperLib;
-        const float steinerStep = 12.0f;
-        std::vector<p2t::Point*> allPoints;
-        std::vector<p2t::Point*> holePoints;
 
-        std::vector<p2t::Point*> polyLine;
-        {
-            for (size_t p = 1; p < path.size(); p++)
-            {
-                const IntPoint &ip0 = path[p - 1];
-                const IntPoint &ip1 = path[p];
-                const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
-                const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
-
-                vec2f v = p1 - p0;
-                const int cnt = int(v.Length() / steinerStep) + 1;
-                v /= cnt;
-                for (int i = 0; i < cnt; i++)
-                {
-                    const vec2f sp = p0 + v * i;
-                    p2t::Point *point = new p2t::Point(sp.x, sp.y);
-                    polyLine.push_back(point);
-                }
-            }
-            const IntPoint &ip0 = path[path.size() - 1];
-            const IntPoint &ip1 = path[0];
-            const vec2f p0 = vec2f(ip0.X, ip0.Y) / clipperScale;
-            const vec2f p1 = vec2f(ip1.X, ip1.Y) / clipperScale;
-
-            vec2f v = p1 - p0;
-            const int cnt = int(v.Length() / steinerStep) + 1;
-            v /= cnt;
-            for (int i = 0; i < cnt; i++)
-            {
-                const vec2f sp = p0 + v * i;
-                p2t::Point *point = new p2t::Point(sp.x, sp.y);
-                polyLine.push_back(point);
-            }
-        }
-
-        p2t::CDT cdt(polyLine);
-
-        for (size_t i = 0; i < holes.size(); i++)
-        {
-            const Path &hole = holes[i];
-            polyLine.clear();
-            for (size_t p = 0; p < hole.size(); p++)
-            {
-                const IntPoint &ip = hole[p];
-                p2t::Point *point = new p2t::Point(ip.X / clipperScale, ip.Y / clipperScale);
-                polyLine.push_back(point);
-                holePoints.push_back(point);
-            }
-            cdt.AddHole(polyLine);
-        }
-
-        cdt.Triangulate();
-
-        std::vector<p2t::Triangle*> tris = cdt.GetTriangles();
-        std::vector<p2t::Triangle*>::iterator it;
-//        std::list<p2t::Triangle*> tris = cdt.GetMap();
-//        std::list<p2t::Triangle*>::iterator it;
-        for (it = tris.begin(); it != tris.end(); ++it)
-        {
-            p2t::Triangle *tri = *it;
-
-            const p2t::Point *p0 = tri->GetPoint(0);
-            const p2t::Point *p1 = tri->GetPoint(1);
-            const p2t::Point *p2 = tri->GetPoint(2);
-
-//            bool isHole0 = false;
-//            bool isHole1 = false;
-//            bool isHole2 = false;
-//            for (size_t i = 0; i < holePoints.size() && !(isHole0 && isHole1 && isHole0); i++)
-//            {
-//                if (p0 == holePoints[i]) isHole0 = true;
-//                if (p1 == holePoints[i]) isHole1 = true;
-//                if (p2 == holePoints[i]) isHole2 = true;
-//            }
-//            if (isHole0 && isHole1 && isHole2) continue;
-
-            if (TriArea(vec2f(p0->x, p0->y), vec2f(p1->x, p1->y), vec2f(p2->x, p2->y)) > 0.0f) continue;
-
-            index_t i0, i1, i2;
-            GetVertex(p0->x, p0->y, &i0);
-            GetVertex(p1->x, p1->y, &i1);
-            GetVertex(p2->x, p2->y, &i2);
-            AddFace(i0, i1, i2);
-        }
-    }
-
-    void NavMesh::Create(const b2World *world, const float halfW, const float halfH, const float agentRadius)
-    {
-        m_gridSz = agentRadius;
-        m_halfW = halfW;
-        m_halfH = halfH;
-
-        for (size_t i = 0; i < MAX_VERTICES; i++)
-            m_vertCache.m_v[i] = nullptr;
-
-        const float clipperScale = 8.0f;
         const float wW = halfW * clipperScale;
         const float wH = halfH * clipperScale;
 
-        using namespace ClipperLib;
-        Clipper clipper;
         Path worldRegion;
         worldRegion.push_back(IntPoint(-wW, -wH));
         worldRegion.push_back(IntPoint(wW, -wH));
@@ -383,6 +288,39 @@ namespace sneaky
             }
             body = body->GetNext();
         }
+    }
+
+    void SetPath(std::vector<std::vector<vec2f> > &paths, ClipperLib::Paths &cpaths, const float clipperScale)
+    {
+        paths.resize(cpaths.size());
+        for (size_t i = 0; i < cpaths.size(); i++)
+        {
+            ClipperLib::Path &cpath = cpaths[i];
+            std::vector<vec2f> &path = paths[i];
+            path.resize(cpath.size());
+            for (size_t p = 0; p < cpath.size(); p++)
+            {
+                vec2f &pathPt = path[p];
+                pathPt.x = cpath[p].X / clipperScale;
+                pathPt.y = cpath[p].Y / clipperScale;
+            }
+        }
+    }
+
+    void NavMesh::Create(const b2World *world, const float halfW, const float halfH, const float agentRadius)
+    {
+        m_halfW = halfW;
+        m_halfH = halfH;
+
+        for (size_t i = 0; i < MAX_VERTICES; i++)
+            m_vertCache.m_v[i] = nullptr;
+
+        const float clipperScale = 8.0f;
+
+        using namespace ClipperLib;
+        Clipper clipper;
+
+        CreateClipperPaths(clipper, world, m_halfW, m_halfH, clipperScale);
 
         ClipperLib::Paths paths;
         clipper.Execute(ctDifference, paths, pftNonZero, pftNonZero);
@@ -395,25 +333,9 @@ namespace sneaky
         Paths solids, holes;
         ClassifyPaths(paths, solids, holes);
 
-        m_solids.resize(solids.size());
-        for (size_t i = 0; i < solids.size(); i++)
-        {
-            Path &cpath = solids[i];
-            std::vector<vec2f> &path = m_solids[i];
-            path.resize(cpath.size());
-            for (size_t p = 0; p < cpath.size(); p++)
-                path[p] = vec2f(cpath[p].X / clipperScale, cpath[p].Y / clipperScale);
-        }
-
-        m_holes.resize(holes.size());
-        for (size_t i = 0; i < holes.size(); i++)
-        {
-            Path &cpath = holes[i];
-            std::vector<vec2f> &path = m_holes[i];
-            path.resize(cpath.size());
-            for (size_t p = 0; p < cpath.size(); p++)
-                path[p] = vec2f(cpath[p].X / clipperScale, cpath[p].Y / clipperScale);
-        }
+        // Copy paths for easier debug rendering
+        SetPath(m_solids, solids, clipperScale);
+        SetPath(m_holes, holes, clipperScale);
 
 //        rob::log::Debug("Solids: ", m_solids.size(), ", holes: ", m_holes.size());
 //        for (size_t s = 0; s < m_solids.size(); s++)
@@ -458,30 +380,33 @@ namespace sneaky
         }
         while (Refine() > 0) ;
 //        Refine2();
+    }
 
-//        for (size_t i = 0; i < m_faceCount; i++)
-//        {
-//            Face &face = m_faces[i];
-//            const index_t i0 = face.vertices[0];
-//            const index_t i1 = face.vertices[1];
-//            const index_t i2 = face.vertices[2];
-//            for (size_t j = i + 1; j < m_faceCount; j++)
-//            {
-//                Face &other = m_faces[j];
-//                if (FaceHasEdge(other, i0, i1))
-//                {
-//                    SetNeighbour(i, 0, j, i0, i1);
-//                }
-//                else if (FaceHasEdge(other, i1, i2))
-//                {
-//                    SetNeighbour(i, 1, j, i1, i2);
-//                }
-//                else if (FaceHasEdge(other, i2, i0))
-//                {
-//                    SetNeighbour(i, 2, j, i2, i0);
-//                }
-//            }
-//        }
+    void NavMesh::ResolveNeighbours()
+    {
+        for (size_t i = 0; i < m_faceCount; i++)
+        {
+            Face &face = m_faces[i];
+            const index_t i0 = face.vertices[0];
+            const index_t i1 = face.vertices[1];
+            const index_t i2 = face.vertices[2];
+            for (size_t j = i + 1; j < m_faceCount; j++)
+            {
+                Face &other = m_faces[j];
+                if (FaceHasEdge(other, i0, i1))
+                {
+                    SetNeighbour(i, 0, j, i0, i1);
+                }
+                else if (FaceHasEdge(other, i1, i2))
+                {
+                    SetNeighbour(i, 1, j, i1, i2);
+                }
+                else if (FaceHasEdge(other, i2, i0))
+                {
+                    SetNeighbour(i, 2, j, i2, i0);
+                }
+            }
+        }
     }
 
     int NavMesh::Refine()
@@ -681,92 +606,6 @@ namespace sneaky
     {
         return (face.vertices[0] == v0 || face.vertices[1] == v0 || face.vertices[2] == v0)
             && (face.vertices[0] == v1 || face.vertices[1] == v1 || face.vertices[2] == v1);
-    }
-
-    void NavMesh::SetGrid(const b2World *world, const float halfW, const float halfH, const float agentRadius)
-    {
-        ROB_ASSERT(agentRadius > 0.0f);
-        const float gridSz = agentRadius;
-
-        const size_t sideVertsX = size_t(2.0f * halfW / gridSz) + 1;
-        const size_t sideVertsY = size_t(2.0f * halfH / gridSz) + 1;
-        const size_t vertCount = sideVertsX * sideVertsY;
-        rob::log::Debug("NavMesh: ", vertCount, " vertices");
-        ROB_ASSERT(vertCount <= MAX_VERTICES);
-
-        const size_t sideFacesX = sideVertsX - 1;
-        const size_t sideFacesY = sideVertsY - 1;
-        const size_t faceCount = sideFacesX * sideFacesY * 2;
-        rob::log::Debug("NavMesh: ", faceCount, " faces");
-        ROB_ASSERT(faceCount <= MAX_FACES);
-
-        float vY = -halfH;
-        for (size_t y = 0; y < sideVertsY; y++, vY += gridSz)
-        {
-            float vX = -halfW;
-            for (size_t x = 0; x < sideVertsX; x++, vX += gridSz)
-            {
-//                if (!TestPoint(world, vX, vY))
-//                    AddVertex(vX, vY);
-                const bool active = !TestPoint(world, vX, vY);
-                AddVertex(vX, vY, active);
-            }
-        }
-
-        for (size_t y = 0; y < sideFacesY; y++)
-        {
-            for (size_t x = 0; x < sideFacesX; x++)
-            {
-                // The faces: 3-2
-                //            |/|
-                //            0-1
-                const size_t i0 = y * sideVertsX + x;
-                const size_t i1 = i0 + 1;
-                const size_t i2 = (y + 1) * sideVertsX + x + 1;
-                const size_t i3 = i2 - 1;
-                Vert& v0 = m_vertices[i0];
-                Vert& v1 = m_vertices[i1];
-                Vert& v2 = m_vertices[i2];
-                Vert& v3 = m_vertices[i3];
-
-                bool face0Active = (v0.flags & v1.flags & v2.flags & VertActive);
-                bool face1Active = (v0.flags & v2.flags & v3.flags & VertActive);
-                if (face0Active)
-                {
-                    const vec2f c = vec2f(v0.x + v1.x + v2.x, v0.y + v1.y + v2.y) / 3.0f;
-                    face0Active &= !TestPoint(world, c.x, c.y);
-                }
-                if (face1Active)
-                {
-                    const vec2f c = vec2f(v0.x + v2.x + v3.x, v0.y + v2.y + v3.y) / 3.0f;
-                    face1Active &= !TestPoint(world, c.x, c.y);
-                }
-
-                const index_t fi0 = AddFace(i0, i1, i2); //, face0Active);
-                const index_t fi1 = AddFace(i2, i3, i0); //, face1Active);
-
-                const index_t fi = (y * sideFacesX + x) * 2;
-
-                Face &f0 = m_faces[fi0];
-                Face &f1 = m_faces[fi1];
-
-                if (y > 0)
-                    f0.neighbours[0] = fi - sideFacesX * 2 + 1;
-                if (x < sideFacesX - 1)
-                    f0.neighbours[1] = fi + 3;
-                f0.neighbours[2] = fi + 1;
-
-                if (y < sideFacesY - 1)
-                    f1.neighbours[0] = fi + sideFacesX * 2;
-                if (x > 0)
-                    f1.neighbours[1] = fi - 2;
-                f1.neighbours[2] = fi;
-            }
-        }
-
-        m_gridSz = gridSz;
-        m_halfW = halfW;
-        m_halfH = halfH;
     }
 
     size_t NavMesh::GetFaceCount() const
