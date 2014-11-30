@@ -73,6 +73,25 @@ namespace sneaky
         }
     }
 
+    void SelectHoles(const ClipperLib::Path &solid, ClipperLib::Paths &holes, ClipperLib::Paths &result)
+    {
+        using namespace ClipperLib;
+        Paths::iterator holeIt;
+        for (holeIt = holes.begin(); holeIt != holes.end(); )
+        {
+            Path &hole = *holeIt;
+            if (PointInPolygon(hole[0], solid))
+            {
+                result.push_back(hole);
+                holeIt = holes.erase(holeIt);
+            }
+            else
+            {
+                ++holeIt;
+            }
+        }
+    }
+
     static inline float TriArea(const vec2f &a, const vec2f &b, const vec2f &c)
     {
         const vec2f ab = b - a;
@@ -402,13 +421,16 @@ namespace sneaky
 //        for (size_t h = 0; h < m_holes.size(); h++)
 //            rob::log::Debug("h", h, ": ", m_holes[h].size());
 
-
+        Paths holeSet;
         for (size_t s = 0; s < solids.size(); s++)
         {
             const Path &solid = solids[s];
             size_t start = m_faceCount;
 
-            TriangulatePath(solid, holes, clipperScale);
+            holeSet.clear();
+            SelectHoles(solid, holes, holeSet);
+
+            TriangulatePath(solid, holeSet, clipperScale);
 
             for (size_t i = start; i < m_faceCount; i++)
             {
