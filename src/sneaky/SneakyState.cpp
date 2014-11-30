@@ -55,7 +55,6 @@ namespace sneaky
         , m_inUpdate(false)
         , m_gameWon(false)
         , m_gameOver(false)
-        , m_mouseJoint(nullptr)
         , m_mouseWorld(0.0f, 0.0f)
         , m_objectPool()
         , m_objects(nullptr)
@@ -177,7 +176,7 @@ namespace sneaky
         CreateStaticBox(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Left wall
         CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Right wall
 
-        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 2.0f);
+        m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 1.0f);
         log::Info("NavMesh size: ", m_nav.GetMesh().GetByteSizeUsed(), " / ", m_nav.GetMesh().GetByteSize(), " bytes");
         log::Info("NavMesh faces: ", m_nav.GetMesh().GetFaceCount(), ", vertices: ", m_nav.GetMesh().GetVertexCount());
 
@@ -188,35 +187,12 @@ namespace sneaky
 
 //        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
-        for (size_t i = 0; i < 10; i++)
-        {
-            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
-        }
+//        for (size_t i = 0; i < 10; i++)
+//        {
+//            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+//        }
 
-//
-//        GameObject *pl = CreateObject(nullptr);
-//
-//        b2BodyDef pldef;
-//        pldef.type = b2_dynamicBody;
-//        pldef.userData = pl;
-//        pldef.position = ToB2(m_nav.GetRandomNavigableWorldPoint(m_random));
-//        b2Body *plBody = m_world->CreateBody(&pldef);
-//
-//        pl->SetBody(plBody);
-//        pl->SetTexture(GetCache().GetTexture("player.tex"));
-//        pl->SetTextureScale(CHARACTER_SCALE);
-//
-//        b2CircleShape shape;
-//        shape.m_radius = 1.0f;
-//        b2FixtureDef fixDef;
-//        fixDef.shape = &shape;
-//        fixDef.density = 1.0f;
-//        fixDef.filter.categoryBits = PlayerBit;
-//        plBody->CreateFixture(&fixDef);
-//
-//        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
-//
-//        pl->SetBrain(brain);
+//        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
@@ -258,6 +234,34 @@ namespace sneaky
 
         m_objects[m_objectCount++] = object;
         return object;
+    }
+
+    GameObject* SneakyState::CreatePlayer(const vec2f &position)
+    {
+        GameObject *pl = CreateObject(nullptr);
+
+        b2BodyDef pldef;
+        pldef.type = b2_dynamicBody;
+        pldef.userData = pl;
+        pldef.position = ToB2(position);
+        b2Body *plBody = m_world->CreateBody(&pldef);
+
+        pl->SetBody(plBody);
+        pl->SetTexture(GetCache().GetTexture("player.tex"));
+        pl->SetTextureScale(CHARACTER_SCALE);
+
+        b2CircleShape shape;
+        shape.m_radius = 1.0f;
+        b2FixtureDef fixDef;
+        fixDef.shape = &shape;
+        fixDef.density = 1.0f;
+        fixDef.filter.categoryBits = PlayerBit;
+        plBody->CreateFixture(&fixDef);
+
+        PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
+
+        pl->SetBrain(brain);
+        return pl;
     }
 
     GameObject* SneakyState::CreateGuard(const vec2f &position)

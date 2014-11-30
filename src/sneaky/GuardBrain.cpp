@@ -228,16 +228,16 @@ namespace sneaky
             m_stateTimer = 0.5f;
         }
 
+        Move(8.0f, gameTime.GetDeltaSeconds());
         if (IsEndOfPath())
         {
-            Navigate(m_lastKnownPlayerPos);
-            Move(8.0f, gameTime.GetDeltaSeconds());
-            if (IsEndOfPath())
+//            Navigate(m_lastKnownPlayerPos);
+//            Move(8.0f, gameTime.GetDeltaSeconds());
+//            if (IsEndOfPath())
                 ChangeToWatchState();
         }
         else
         {
-            Move(8.0f, gameTime.GetDeltaSeconds());
             if (IsStuck())
                 Navigate(m_lastKnownPlayerPos);
         }
@@ -267,7 +267,6 @@ namespace sneaky
     void GuardBrain::Navigate(const vec2f &pos)
     {
         m_pathPos = 0;
-        m_path->Clear();
         m_nav->Navigate(m_owner->GetPosition(), pos, m_path);
         m_stuckMeter = 0.0f;
     }

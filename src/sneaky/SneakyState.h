@@ -37,6 +37,7 @@ namespace sneaky
 
         GameObject* CreateObject(GameObject *prevLink = nullptr);
         GameObject* CreateStaticBox(const vec2f &position, float angle, float w, float h);
+        GameObject* CreatePlayer(const vec2f &position);
         GameObject* CreateGuard(const vec2f &position);
         GameObject* CreateCake(const vec2f &position);
 
@@ -78,7 +79,6 @@ namespace sneaky
         bool m_gameWon;
         bool m_gameOver;
 
-        b2MouseJoint *m_mouseJoint;
         vec2f m_mouseWorld;
 
         rob::Pool<GameObject> m_objectPool;
