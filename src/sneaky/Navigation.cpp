@@ -92,7 +92,6 @@ namespace sneaky
         m_world = world;
         m_mesh.Allocate(alloc);
         m_mesh.Create(world, worldHalfW, worldHalfH, agentRadius);
-//        m_mesh.SetGrid(world, worldHalfW, worldHalfH, agentRadius);
         m_nodes = alloc.AllocateArray<Node>(m_mesh.GetFaceCount());
         m_np.SetMemory(alloc.AllocateArray<NavPath>(16), rob::GetArraySize<NavPath>(16));
         return false;
@@ -411,6 +410,11 @@ namespace sneaky
         const index_t endFace = m_mesh.GetClampedFaceIndex(&e);
 
         const bool found = FindNodePath(s, e, startFace, endFace);
+        if (!found) // If no full path was found, fix the end point
+        {
+            const NavMesh::Face &lastFace = m_mesh.GetFace(m_path.path[m_path.len - 1]);
+            e = m_mesh.GetClosestPointOnFace(lastFace, e);
+        }
         FindStraightPath(s, e, path, found);
         return found;
     }
