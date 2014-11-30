@@ -39,6 +39,19 @@ namespace sneaky
     NavMesh::~NavMesh()
     { }
 
+    size_t NavMesh::GetByteSize() const
+    {
+        size_t size = MAX_FACES * sizeof(Face)
+            + MAX_VERTICES * sizeof(Vert);
+        return sizeof(NavMesh) + size;
+    }
+    size_t NavMesh::GetByteSizeUsed() const
+    {
+        size_t size = m_faceCount * sizeof(Face)
+            + m_vertexCount * sizeof(Vert);
+        return sizeof(NavMesh) + size;
+    }
+
     void NavMesh::Allocate(rob::LinearAllocator &alloc)
     {
         m_faces = alloc.AllocateArray<Face>(MAX_FACES);
@@ -763,15 +776,14 @@ namespace sneaky
         return pointTest.m_hit;
     }
 
-    NavMesh::Vert* NavMesh::AddVertex(float x, float y, bool active)
+    NavMesh::Vert* NavMesh::AddVertex(float x, float y) //, bool active)
     {
         ROB_ASSERT(m_vertexCount < MAX_VERTICES);
         Vert &v = m_vertices[m_vertexCount++];
         v.x = x;
         v.y = y;
-        v.flags = 0;
-        v.flags |= active ? VertActive : 0x0;
-//        for (size_t i = 0; i < 8; i++) v.faces[i] = InvalidIndex;
+//        v.flags = 0;
+//        v.flags |= active ? VertActive : 0x0;
         return &v;
     }
 
@@ -824,7 +836,7 @@ namespace sneaky
 
         if (!v)
         {
-            v = AddVertex(vx, vy, true);
+            v = AddVertex(vx, vy);
             m_vertCache.m_v[hash] = v;
         }
 

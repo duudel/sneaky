@@ -178,18 +178,20 @@ namespace sneaky
         CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Right wall
 
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 2.0f);
-        m_path = m_nav.ObtainNavPath();
+        log::Info("NavMesh size: ", m_nav.GetMesh().GetByteSizeUsed(), " / ", m_nav.GetMesh().GetByteSize(), " bytes");
+        log::Info("NavMesh faces: ", m_nav.GetMesh().GetFaceCount(), ", vertices: ", m_nav.GetMesh().GetVertexCount());
 
+        m_path = m_nav.ObtainNavPath();
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);
 
 //        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
-//        for (size_t i = 0; i < 10; i++)
-//        {
-//            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
-//        }
+        for (size_t i = 0; i < 10; i++)
+        {
+            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+        }
 
 //
 //        GameObject *pl = CreateObject(nullptr);

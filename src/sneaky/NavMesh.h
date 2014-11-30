@@ -40,16 +40,18 @@ namespace sneaky
         struct Vert
         {
             float x, y;
-            uint32_t flags;
-            //index_t faces[8];
+//            uint32_t flags;
         };
 
-        static const index_t MAX_FACES = 1024*64;
-        static const index_t MAX_VERTICES = 1024*64;
+        static const index_t MAX_FACES = 1024*32;
+        static const index_t MAX_VERTICES = 1024*32;
 
     public:
         NavMesh();
         ~NavMesh();
+
+        size_t GetByteSize() const;
+        size_t GetByteSizeUsed() const;
 
         void Allocate(rob::LinearAllocator &alloc);
         void Create(const b2World *world, const float halfW, const float halfH, const float agentRadius);
@@ -84,12 +86,11 @@ namespace sneaky
 
     private:
         void CreateClipperPaths(ClipperLib::Clipper &clipper, const b2World *world, const float halfW, const float halfH, const float clipperScale);
-        void TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
         void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
 
 
         static bool TestPoint(const b2World *world, float x, float y);
-        Vert* AddVertex(float x, float y, bool active);
+        Vert* AddVertex(float x, float y);
         Vert* GetVertex(float x, float y, index_t *index);
         index_t AddFace(index_t i0, index_t i1, index_t i2);
         bool FaceContainsPoint(const Face &face, const vec2f &v) const;

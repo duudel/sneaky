@@ -333,76 +333,6 @@ namespace sneaky
         path->AppendVertex(end.x, end.y);
     }
 
-    void Navigation::FindStraightPath2(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
-    {
-        int num = 0;
-        vec2f candidates[3];
-        vec2f dest = start;
-        vec2f current = start;
-
-        path->Clear();
-
-        path->AppendVertex(start.x, start.y);
-        if (m_path.len <= 1 && fullPath)
-        {
-            path->AppendVertex(end.x, end.y);
-            return;
-        }
-
-        for (size_t i = 0; i < m_path.len; i++)
-        {
-            const NavMesh::Face &f = m_mesh.GetFace(m_path.path[i]);
-
-            num = 0;
-            for (int j = 0; j < 3; j++)
-            {
-                PathRayCast rayCast;
-                const NavMesh::Vert &v = m_mesh.GetVertex(f.vertices[j]);
-                candidates[num] = vec2f(v.x, v.y);
-                m_world->RayCast(&rayCast, ToB2(current), ToB2(candidates[num]));
-                if (!rayCast.hit) num++;
-            }
-
-            if (num == 0)
-            {
-                path->AppendVertex(dest.x, dest.y);
-                current = dest;
-            }
-            else
-            {
-                float minDist = rob::Distance2(candidates[0], current);
-                dest = candidates[0];
-                for (int j = 1; j < num; j++)
-                {
-                    float dist = rob::Distance2(candidates[j], current);
-                    if (dist < minDist)
-                    {
-                        minDist = dist;
-                        dest = candidates[j];
-                    }
-                }
-            }
-        }
-
-        if (!fullPath)
-        {
-            path->AppendVertex(dest.x, dest.y);
-            return;
-        }
-
-        PathRayCast rayCast;
-        m_world->RayCast(&rayCast, ToB2(current), ToB2(end));
-        if (!rayCast.hit)
-        {
-            path->AppendVertex(end.x, end.y);
-        }
-        else
-        {
-            path->AppendVertex(dest.x, dest.y);
-            path->AppendVertex(end.x, end.y);
-        }
-    }
-
     bool Navigation::Navigate(const vec2f &start, const vec2f &end, NavPath *path)
     {
         vec2f s = start, e = end;
@@ -537,17 +467,17 @@ namespace sneaky
             }
         }
 
-        renderer->SetColor(rob::Color::Orange);
-        for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
-        {
-            RenderClippedPath(renderer, m_mesh.m_solids[i]);
-        }
-
-        renderer->SetColor(rob::Color::Red);
-        for (size_t i = 0; i < m_mesh.m_holes.size(); i++)
-        {
-            RenderClippedPath(renderer, m_mesh.m_holes[i]);
-        }
+//        renderer->SetColor(rob::Color::Orange);
+//        for (size_t i = 0; i < m_mesh.m_solids.size(); i++)
+//        {
+//            RenderClippedPath(renderer, m_mesh.m_solids[i]);
+//        }
+//
+//        renderer->SetColor(rob::Color::Red);
+//        for (size_t i = 0; i < m_mesh.m_holes.size(); i++)
+//        {
+//            RenderClippedPath(renderer, m_mesh.m_holes[i]);
+//        }
     }
 
     void Navigation::RenderPath(rob::Renderer *renderer, const NavPath *path) const

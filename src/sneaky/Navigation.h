@@ -91,15 +91,6 @@ namespace sneaky
             point.y = rand.GetReal(-halfSize.y, halfSize.y);
             m_mesh.GetClampedFaceIndex(&point);
             return point;
-
-//            vec2f point;
-//            do
-//            {
-//                point.x = rand.GetReal(-halfSize.x, halfSize.x);
-//                point.y = rand.GetReal(-halfSize.y, halfSize.y);
-//            } while (!IsWalkable(point));
-//
-//            return point;
         }
 
         NavPath *ObtainNavPath();
@@ -115,7 +106,6 @@ namespace sneaky
     private:
         bool FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace);
         void FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath);
-        void FindStraightPath2(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath);
 
     private:
         const b2World *m_world;
