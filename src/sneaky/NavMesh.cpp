@@ -817,8 +817,9 @@ namespace sneaky
         Vert *v = m_vertCache.m_v[hash];
         if (v)
         {
+            bool found = false;
             const index_t hstart = hash;
-            while (v && hash < MAX_VERTICES)
+            while (!found && hash < MAX_VERTICES)
             {
                 v = m_vertCache.m_v[hash];
                 if (v && !vec2f::Equals(vec2f(v->x, v->y), vec2f(vx, vy), scale))
@@ -826,9 +827,11 @@ namespace sneaky
                     hash++;
                 }
                 else
-                    break;
+                {
+                    found = true;
+                }
             }
-            while (v && hash < hstart)
+            while (!found && hash < hstart)
             {
                 v = m_vertCache.m_v[hash];
                 if (v && !vec2f::Equals(vec2f(v->x, v->y), vec2f(vx, vy), scale))
@@ -836,9 +839,14 @@ namespace sneaky
                     hash++;
                 }
                 else
-                    break;
+                {
+                    found = true;
+                }
                 if (hash == hstart)
+                {
+                    ROB_ASSERT(hash != hstart);
                     break;
+                }
             }
         }
 
