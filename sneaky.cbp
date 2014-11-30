@@ -60,7 +60,6 @@
 			<Add directory="src" />
 			<Add directory="3rdparty/liquidfun/Box2D" />
 			<Add directory="3rdparty/Clipper" />
-			<Add directory="3rdparty/poly2tri/poly2tri" />
 			<Add directory="3rdparty/polypartition" />
 		</Compiler>
 		<Linker>
@@ -184,18 +183,6 @@
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Particle/b2VoronoiDiagram.h" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.cpp" />
 		<Unit filename="3rdparty/liquidfun/Box2D/Box2D/Rope/b2Rope.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/common/shapes.cc" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/common/shapes.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/common/utils.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/poly2tri.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/advancing_front.cc" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/advancing_front.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/cdt.cc" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/cdt.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep.cc" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep.h" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.cc" />
-		<Unit filename="3rdparty/poly2tri/poly2tri/sweep/sweep_context.h" />
 		<Unit filename="3rdparty/polypartition/polypartition.cpp" />
 		<Unit filename="3rdparty/polypartition/polypartition.h" />
 		<Unit filename="TODO.txt" />
