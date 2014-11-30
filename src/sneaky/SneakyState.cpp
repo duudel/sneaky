@@ -623,6 +623,8 @@ namespace sneaky
         {
             if (key == Keyboard::Key::R)
                 m_nav.GetMesh().Refine2();
+            if (key == Keyboard::Key::T)
+                m_nav.GetMesh().Refine();
             if (key == Keyboard::Key::G)
                 m_drawNav = !m_drawNav;
             if (key == Keyboard::Key::H)

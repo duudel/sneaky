@@ -328,7 +328,7 @@ namespace sneaky
         ClipperOffset clipperOfft(2.0, agentRadius);
         clipperOfft.AddPaths(paths, jtRound, etClosedPolygon);
         paths.clear();
-        clipperOfft.Execute(paths, -agentRadius * clipperScale); // * 1.05f);
+        clipperOfft.Execute(paths, -agentRadius * clipperScale);
 
         Paths solids, holes;
         ClassifyPaths(paths, solids, holes);
@@ -337,54 +337,26 @@ namespace sneaky
         SetPath(m_solids, solids, clipperScale);
         SetPath(m_holes, holes, clipperScale);
 
-//        rob::log::Debug("Solids: ", m_solids.size(), ", holes: ", m_holes.size());
-//        for (size_t s = 0; s < m_solids.size(); s++)
-//            rob::log::Debug("s", s, ": ", m_solids[s].size());
-//        for (size_t h = 0; h < m_holes.size(); h++)
-//            rob::log::Debug("h", h, ": ", m_holes[h].size());
-
         Paths holeSet;
         for (size_t s = 0; s < solids.size(); s++)
         {
             const Path &solid = solids[s];
-            size_t start = m_faceCount;
+            const size_t startFace = m_faceCount;
 
             holeSet.clear();
             SelectHoles(solid, holes, holeSet);
 
             TriangulatePath(solid, holeSet, clipperScale);
 
-            for (size_t i = start; i < m_faceCount; i++)
-            {
-                Face &face = m_faces[i];
-                const index_t i0 = face.vertices[0];
-                const index_t i1 = face.vertices[1];
-                const index_t i2 = face.vertices[2];
-                for (size_t j = i + 1; j < m_faceCount; j++)
-                {
-                    Face &other = m_faces[j];
-                    if (FaceHasEdge(other, i0, i1))
-                    {
-                        SetNeighbour(i, 0, j, i0, i1);
-                    }
-                    else if (FaceHasEdge(other, i1, i2))
-                    {
-                        SetNeighbour(i, 1, j, i1, i2);
-                    }
-                    else if (FaceHasEdge(other, i2, i0))
-                    {
-                        SetNeighbour(i, 2, j, i2, i0);
-                    }
-                }
-            }
+            ResolveNeighbours(startFace);
         }
         while (Refine() > 0) ;
 //        Refine2();
     }
 
-    void NavMesh::ResolveNeighbours()
+    void NavMesh::ResolveNeighbours(size_t startFace)
     {
-        for (size_t i = 0; i < m_faceCount; i++)
+        for (size_t i = startFace; i < m_faceCount; i++)
         {
             Face &face = m_faces[i];
             const index_t i0 = face.vertices[0];

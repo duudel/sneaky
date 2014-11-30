@@ -80,13 +80,13 @@ namespace sneaky
         std::vector<std::vector<vec2f> > m_holes;
 
         int Refine2();
+        int Refine();
 
     private:
         void CreateClipperPaths(ClipperLib::Clipper &clipper, const b2World *world, const float halfW, const float halfH, const float clipperScale);
         void TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
         void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
 
-        int Refine();
 
         static bool TestPoint(const b2World *world, float x, float y);
         Vert* AddVertex(float x, float y, bool active);
@@ -95,7 +95,7 @@ namespace sneaky
         bool FaceContainsPoint(const Face &face, const vec2f &v) const;
         bool FaceHasEdge(const Face &face, index_t v0, index_t v1);
         void SetNeighbour(index_t fi, int ni, index_t fj, index_t v0, index_t v1);
-        void ResolveNeighbours();
+        void ResolveNeighbours(size_t startFace);
 
     private:
         size_t m_faceCount;
