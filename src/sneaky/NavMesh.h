@@ -79,6 +79,8 @@ namespace sneaky
         std::vector<std::vector<vec2f> > m_solids;
         std::vector<std::vector<vec2f> > m_holes;
 
+        int Refine2();
+
     private:
         void TriangulatePath2(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);
         void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);

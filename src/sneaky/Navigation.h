@@ -71,6 +71,7 @@ namespace sneaky
         bool CreateNavMesh(rob::LinearAllocator &alloc, const b2World *world, const float worldHalfW, const float worldHalfH, const float agentRadius);
 
         const NavMesh& GetMesh() const { return m_mesh; }
+        NavMesh& GetMesh() { return m_mesh; }
 
         bool IsWalkable(const vec2f &point) const
         {

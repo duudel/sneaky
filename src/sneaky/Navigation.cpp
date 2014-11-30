@@ -490,8 +490,10 @@ namespace sneaky
 
         if (f.flags == 0)
             renderer->SetColor(rob::Color::LightGreen);
-        else
+        else if (f.flags == 1)
             renderer->SetColor(rob::Color::Yellow);
+        else
+            renderer->SetColor(rob::Color::DarkGreen);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);

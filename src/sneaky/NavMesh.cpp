@@ -80,6 +80,19 @@ namespace sneaky
         return (ac.x * ab.y - ab.x * ac.y);
     }
 
+    static inline float DistanceFromEdge2(const vec2f &a, const vec2f &b, const vec2f &p)
+    {
+        const vec2f e = b - a;
+        const vec2f v = p - a;
+        const float d = e.Dot(e);
+        float t = e.Dot(v);
+        if (d > 0) t /= d;
+        if (t < 0) t = 0;
+        else if (t > 1) t = 1;
+        const vec2f offt = p + t * e - p;
+        return offt.Length2();
+    }
+
     void AddPolyPath(TPPLPoly &poly, const ClipperLib::Path &path, const float clipperScale, const float steinerStep = 12.0f)
     {
         size_t pathSize = 0;
@@ -422,6 +435,7 @@ namespace sneaky
             }
         }
         while (Refine() > 0) ;
+//        Refine2();
 
 //        for (size_t i = 0; i < m_faceCount; i++)
 //        {
@@ -498,7 +512,7 @@ namespace sneaky
                     const float area0 = TriArea(vec0, nvec2, vec2);
                     const float area1 = TriArea(vec1, vec2, nvec2);
 
-                    if (area0 > 0.0f && area1 > 0.0f && edgeLen > 1.1f * altLen)
+                    if (area0 > 0.0f && area1 > 0.0f && edgeLen > altLen)
                     {
                         refinedFaces++;
                         face.flags = 1;
@@ -530,6 +544,84 @@ namespace sneaky
             }
         }
         rob::log::Debug("Refined faces: ", refinedFaces);
+        return refinedFaces;
+    }
+
+    int NavMesh::Refine2()
+    {
+        int refinedFaces = 0;
+        static const int prevV[] = { 2, 0, 1 };
+        static const int nextV[] = { 1, 2, 0 };
+        for (index_t f = 0; f < m_faceCount; f++)
+        {
+            Face &face = m_faces[f];
+            for (int ni = 0; ni < 3; ni++)
+            {
+                if (face.neighbours[ni] != InvalidIndex)
+                {
+                    const index_t n = face.neighbours[ni];
+                    Face &neighbour = m_faces[n];
+
+                    const int nni = (neighbour.neighbours[0] == f ? 0 : (neighbour.neighbours[1] == f ? 1 : 2));
+
+                    const int v0i = ni;
+                    const int v1i = nextV[v0i];
+                    const int v2i = nextV[v1i];
+
+                    const int nv0i = nni;
+                    const int nv1i = nextV[nv0i];
+                    const int nv2i = nextV[nv1i];
+
+                    const index_t v0 = face.vertices[v0i];
+                    const index_t v1 = face.vertices[v1i];
+                    const vec2f vec0(m_vertices[v0].x, m_vertices[v0].y);
+                    const vec2f vec1(m_vertices[v1].x, m_vertices[v1].y);
+
+                    const index_t v2 = face.vertices[v2i];
+                    const index_t nv2 = neighbour.vertices[nv2i];
+                    const vec2f vec2(m_vertices[v2].x, m_vertices[v2].y);
+                    const vec2f nvec2(m_vertices[nv2].x, m_vertices[nv2].y);
+
+                    const float origArea0 = TriArea(vec0, vec1, vec2);
+                    const float origArea1 = TriArea(vec1, vec0, nvec2);
+                    const float areaRatio = 8.0f;
+
+                    const float area0 = TriArea(vec0, nvec2, vec2);
+                    const float area1 = TriArea(vec1, vec2, nvec2);
+
+                    if (area0 > 0.0f && area1 > 0.0f &&
+                        (origArea0 > areaRatio * origArea1)) // || origArea1 > areaRatio * origArea0))
+                    {
+                        refinedFaces++;
+                        face.flags = 2;
+                        neighbour.flags = 2;
+
+                        const index_t fn_p = face.neighbours[prevV[ni]];
+                        const index_t fn_n = face.neighbours[nextV[ni]];
+                        const index_t nn_p = neighbour.neighbours[prevV[nni]];
+                        const index_t nn_n = neighbour.neighbours[nextV[nni]];
+
+                        face.vertices[0] = v0;
+                        face.vertices[1] = nv2;
+                        face.vertices[2] = v2;
+
+                        neighbour.vertices[0] = v1;
+                        neighbour.vertices[1] = v2;
+                        neighbour.vertices[2] = nv2;
+
+                        SetNeighbour(f, 0, nn_n, v0, nv2);
+                        SetNeighbour(f, 1, n, nv2, v2);
+                        SetNeighbour(f, 2, fn_p, v2, v0);
+
+                        SetNeighbour(n, 0, fn_n, v1, v2);
+                        SetNeighbour(n, 1, f, v2, nv2);
+                        SetNeighbour(n, 2, nn_p, nv2, v1);
+                        continue;
+                    }
+                }
+            }
+        }
+        rob::log::Debug("Refined thin faces: ", refinedFaces);
         return refinedFaces;
     }
 

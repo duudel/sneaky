@@ -621,6 +621,8 @@ namespace sneaky
 
         // TODO: These are for debugging
         {
+            if (key == Keyboard::Key::R)
+                m_nav.GetMesh().Refine2();
             if (key == Keyboard::Key::G)
                 m_drawNav = !m_drawNav;
             if (key == Keyboard::Key::H)
