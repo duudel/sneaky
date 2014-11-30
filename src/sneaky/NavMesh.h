@@ -84,6 +84,9 @@ namespace sneaky
         int Refine2();
         int Refine();
 
+        uint32_t Flood();
+        void FloodFace(Face &face, const uint32_t flag);
+
     private:
         void CreateClipperPaths(ClipperLib::Clipper &clipper, const b2World *world, const float halfW, const float halfH, const float clipperScale);
         void TriangulatePath(const ClipperLib::Path &path, const ClipperLib::Paths &holes, const float clipperScale);

@@ -109,10 +109,12 @@ namespace sneaky
 
         m_input.SetView(&m_view);
 
-//        static uint32_t seed = 2013034;
-//
-//        m_random.Seed(seed);
         CreateWorld();
+        return true;
+
+//        static uint32_t seed = 2013034;
+//        m_random.Seed(seed);
+//        CreateWorld();
 //        if (m_nav.GetMesh().GetFaceCount() < 10)
 //        {
 //            rob::log::Info("Seed: ", seed);
@@ -120,7 +122,18 @@ namespace sneaky
 //        }
 //        seed++;
 //        ChangeState(STATE_Game);
-        return true;
+
+//        static uint32_t seed = 2013034;
+//        m_random.Seed(seed);
+//        CreateWorld();
+//        if (m_nav.GetMesh().Flood() != m_nav.GetMesh().m_solids.size())
+//        {
+//            rob::log::Info("Seed: ", seed);
+//            return true;
+//        }
+//        seed++;
+//        ChangeState(STATE_Game);
+//        return true;
     }
 
     //float g_theta;
@@ -179,6 +192,8 @@ namespace sneaky
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 1.0f);
         log::Info("NavMesh size: ", m_nav.GetMesh().GetByteSizeUsed(), " / ", m_nav.GetMesh().GetByteSize(), " bytes");
         log::Info("NavMesh faces: ", m_nav.GetMesh().GetFaceCount(), ", vertices: ", m_nav.GetMesh().GetVertexCount());
+
+//        m_nav.GetMesh().Flood();
 
         m_path = m_nav.ObtainNavPath();
         m_pathStart = vec2f(-PLAY_AREA_W, -PLAY_AREA_W);
@@ -627,6 +642,8 @@ namespace sneaky
 
         // TODO: These are for debugging
         {
+            if (key == Keyboard::Key::F)
+                m_nav.GetMesh().Flood();
             if (key == Keyboard::Key::R)
                 m_nav.GetMesh().Refine2();
             if (key == Keyboard::Key::T)

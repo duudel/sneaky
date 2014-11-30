@@ -346,6 +346,8 @@ namespace sneaky
         Paths solids, holes;
         ClassifyPaths(paths, solids, holes);
 
+        rob::log::Debug("Solids: ", solids.size(), ", holes: ", holes.size());
+
         // Copy paths for easier debug rendering
         SetPath(m_solids, solids, clipperScale);
         SetPath(m_holes, holes, clipperScale);
@@ -364,7 +366,7 @@ namespace sneaky
             ResolveNeighbours(startFace);
         }
         while (Refine() > 0) ;
-//        Refine2();
+        Refine2();
     }
 
     void NavMesh::ResolveNeighbours(size_t startFace)
@@ -392,6 +394,37 @@ namespace sneaky
                 }
             }
         }
+    }
+
+    void NavMesh::FloodFace(Face &face, const uint32_t flag)
+    {
+        face.flags = flag;
+        for (int i = 0; i < 3; i++)
+        {
+            if (face.neighbours[i] == InvalidIndex) continue;
+            Face &neighbour = m_faces[face.neighbours[i]];
+            if (neighbour.flags == uint32_t(-1)) FloodFace(neighbour, flag);
+        }
+    }
+
+    uint32_t NavMesh::Flood()
+    {
+        uint32_t flag = 0;
+        for (index_t f = 0; f < m_faceCount; f++)
+        {
+            Face &face = m_faces[f];
+            face.flags = uint32_t(-1);
+        }
+        for (index_t f = 0; f < m_faceCount; f++)
+        {
+            Face &face = m_faces[f];
+            if (face.flags == uint32_t(-1))
+            {
+                FloodFace(face, flag);
+                flag++;
+            }
+        }
+        return flag;
     }
 
     int NavMesh::Refine()
@@ -789,60 +822,93 @@ namespace sneaky
 
     NavMesh::Vert* NavMesh::GetVertex(const float x, const float y, index_t *index)
     {
-        const index_t HASH_MASK = MAX_VERTICES - 1;
-        const float scale = 10.0f;
-        const int hx = x * scale;
-        const int hy = y * scale;
+        const size_t HASH_MASK = MAX_VERTICES - 1;
+        const float scale = 1000.0f;
+        const int hx = roundf(x * scale);
+        const int hy = roundf(y * scale);
         const vec2f v(x, y);
+        const float epsilonDist = 0.01f;
 
-        bool found = false;
-        index_t hash = (hx * 32786 + hy) & HASH_MASK;
+        size_t hash = (hy * 32786 + hx) & HASH_MASK;
+
+
         Vert *vert = m_vertCache.m_v[hash];
         if (vert)
         {
-            const index_t hstart = hash;
-            while (!found && hash < MAX_VERTICES)
+            if (!vec2f::Equals(vec2f(vert->x, vert->y), v, epsilonDist))
             {
-                vert = m_vertCache.m_v[hash];
-                if (vert && !vec2f::Equals(vec2f(vert->x, vert->y), v))//, scale))
+                bool found = false;
+                for (index_t i = 0; i < m_vertexCount; i++)
                 {
-                    hash++;
+                    vert = m_vertices + i;
+                    if (vec2f::Equals(vec2f(vert->x, vert->y), v, epsilonDist))
+                    {
+                        found = true;
+                        break;
+                    }
                 }
-                else
-                {
-                    found = true;
-                }
-            }
-            if (!found) hash = 0;
-            while (!found && hash < hstart)
-            {
-                vert = m_vertCache.m_v[hash];
-                if (vert && !vec2f::Equals(vec2f(vert->x, vert->y), v))//, scale))
-                {
-                    hash++;
-                }
-                else
-                {
-                    found = true;
-                }
-            }
-            if (!found && hash == hstart)
-            {
-                ROB_ASSERT(hash != hstart);
+                if (!found) vert = nullptr;
+
+////                hash -= 32786 + 1;
+//                const size_t hstart = hash;
+//                do {
+//                    vert = m_vertCache.m_v[hash];
+//                    hash = (hash + 1) & HASH_MASK;
+//                    if (!vert || vec2f::Equals(vec2f(vert->x, vert->y), v, epsilonDist))
+//                        break;
+//                } while (hash != hstart);
+//
+//                if (hash == hstart)
+//                {
+//                    ROB_ASSERT(hash != hstart);
+//                }
             }
         }
+//        if (vert)
+//        {
+//            const index_t hstart = hash;
+//            while (!found && hash < MAX_VERTICES)
+//            {
+//                vert = m_vertCache.m_v[hash];
+//                if (vert && !vec2f::Equals(vec2f(vert->x, vert->y), v, 0.01f))
+//                {
+//                    hash++;
+//                }
+//                else
+//                {
+//                    found = true;
+//                }
+//            }
+//            hash = 0;
+//            while (!found && hash < hstart)
+//            {
+//                vert = m_vertCache.m_v[hash];
+//                if (vert && !vec2f::Equals(vec2f(vert->x, vert->y), v, 0.01f))
+//                {
+//                    hash++;
+//                }
+//                else
+//                {
+//                    found = true;
+//                }
+//            }
+//            if (!found && hash == hstart)
+//            {
+//                ROB_ASSERT(hash != hstart);
+//            }
+//        }*/
 
-        if (!found || !vert)
+        if (!vert)
         {
             vert = AddVertex(v.x, v.y);
             m_vertCache.m_v[hash] = vert;
         }
 
         const float dist = rob::Distance(vec2f(vert->x, vert->y), v);
-        if (dist >= 0.01f)
+        if (dist >= epsilonDist)
         {
-            rob::log::Error("Distance ", dist, " >= 0.01f");
-            ROB_ASSERT(dist < 0.01f);
+            rob::log::Error("Distance ", dist, " >= ", epsilonDist);
+            ROB_ASSERT(dist < epsilonDist);
         }
 
         *index = index_t(vert - m_vertices);
@@ -877,7 +943,6 @@ namespace sneaky
     {
         static const int next[] = { 1, 2, 0 };
         const Face &fromFace = m_faces[from];
-//        const Face &toFace = m_faces[to];
 
         int edge = 0;
         for (; edge < 3; edge++)

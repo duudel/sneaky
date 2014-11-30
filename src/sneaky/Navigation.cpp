@@ -413,6 +413,17 @@ namespace sneaky
         renderer->SetModel(mat4f::Identity);
         renderer->BindColorShader();
 
+        static const rob::Color colors[] = {
+            rob::Color::LightGreen,
+            rob::Color::Yellow,
+            rob::Color::DarkGreen,
+            rob::Color::Orange,
+            rob::Color::LightBlue,
+            rob::Color::DarkBlue,
+            rob::Color::LightRed,
+            rob::Color::DarkRed
+        };
+
         renderer->SetColor(rob::Color::LightGreen);
         const size_t faceCount = m_mesh.GetFaceCount();
         for (size_t i = 0; i < faceCount; i++)
@@ -422,12 +433,14 @@ namespace sneaky
             const NavMesh::Vert &v1 = m_mesh.GetVertex(f.vertices[1]);
             const NavMesh::Vert &v2 = m_mesh.GetVertex(f.vertices[2]);
 
-        if (f.flags == 0)
-            renderer->SetColor(rob::Color::LightGreen);
-        else if (f.flags == 1)
-            renderer->SetColor(rob::Color::Yellow);
-        else
-            renderer->SetColor(rob::Color::DarkGreen);
+//        if (f.flags == 0)
+//            renderer->SetColor(rob::Color::LightGreen);
+//        else if (f.flags == 1)
+//            renderer->SetColor(rob::Color::Yellow);
+//        else
+//            renderer->SetColor(rob::Color::DarkGreen);
+
+            renderer->SetColor(colors[f.flags & 0x7]);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
