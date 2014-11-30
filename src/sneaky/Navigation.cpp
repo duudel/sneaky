@@ -194,6 +194,7 @@ namespace sneaky
         }
 
         index_t v = endFace;
+        m_path.len++;
         while (m_nodes[v].prev != NavMesh::InvalidIndex)
         {
             v = m_nodes[v].prev;
@@ -243,6 +244,19 @@ namespace sneaky
         return (ac.x * ab.y - ab.x * ac.y);
     }
 
+    static inline float DistanceFromEdge2(const vec2f &a, const vec2f &b, const vec2f &p)
+    {
+        const vec2f e = b - a;
+        const vec2f v = p - a;
+        const float d = e.Dot(e);
+        float t = e.Dot(v);
+        if (d > 0) t /= d;
+        if (t < 0) t = 0;
+        else if (t > 1) t = 1;
+        const vec2f offt = p + t * e - p;
+        return offt.Length2();
+    }
+
     void Navigation::FindStraightPath(const vec2f &start, const vec2f &end, NavPath *path, bool fullPath)
     {
         path->Clear();
@@ -261,6 +275,9 @@ namespace sneaky
                 if (i + 1 < m_path.len)
                 {
                     m_mesh.GetPortalPoints(m_path.path[i], m_path.path[i + 1], left, right);
+
+                    if (i == 0 && DistanceFromEdge2(apex, left, right) < 0.001f * 0.001f)
+                        continue;
                 }
                 else
                 {

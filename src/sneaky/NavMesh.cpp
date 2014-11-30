@@ -80,9 +80,8 @@ namespace sneaky
         return (ac.x * ab.y - ab.x * ac.y);
     }
 
-    void AddPolyPath(TPPLPoly &poly, const ClipperLib::Path &path, const float clipperScale)
+    void AddPolyPath(TPPLPoly &poly, const ClipperLib::Path &path, const float clipperScale, const float steinerStep = 12.0f)
     {
-        const float steinerStep = 12.0f;
         size_t pathSize = 0;
         {
             for (size_t p = 1; p < path.size(); p++)
@@ -120,9 +119,10 @@ namespace sneaky
             vec2f v = p1 - p0;
             const int cnt = int(v.Length() / steinerStep) + 1;
             v /= cnt;
+            const vec2f no = vec2f(-v.y, v.x).Normalized();
             for (int i = 0; i < cnt; i++)
             {
-                const vec2f sp = p0 + v * i;
+                const vec2f sp = p0 + v * i - no * 0.1f;
                 poly[n].x = sp.x;
                 poly[n].y = sp.y;
                 n++;
@@ -136,9 +136,10 @@ namespace sneaky
         vec2f v = p1 - p0;
         const int cnt = int(v.Length() / steinerStep) + 1;
         v /= cnt;
+        const vec2f no = vec2f(-v.y, v.x).Normalized();
         for (int i = 0; i < cnt; i++)
         {
-            const vec2f sp = p0 + v * i;
+            const vec2f sp = p0 + v * i - no * 0.1f;
             poly[n].x = sp.x;
             poly[n].y = sp.y;
             n++;
@@ -169,14 +170,14 @@ namespace sneaky
         {
             const ClipperLib::Path &holePath = holes[h];
             TPPLPoly &hole = *polyIt;
-            hole.Init(holePath.size());
-//            AddPolyPath(hole, holePath, clipperScale);
-            for (size_t i = 0; i < holePath.size(); i++)
-            {
-                const ClipperLib::IntPoint &ip = holePath[i];
-                hole[i].x = ip.X / clipperScale;
-                hole[i].y = ip.Y / clipperScale;
-            }
+            AddPolyPath(hole, holePath, clipperScale, 16.0f);
+//            hole.Init(holePath.size());
+//            for (size_t i = 0; i < holePath.size(); i++)
+//            {
+//                const ClipperLib::IntPoint &ip = holePath[i];
+//                hole[i].x = ip.X / clipperScale;
+//                hole[i].y = ip.Y / clipperScale;
+//            }
             hole.SetHole(true);
             ROB_ASSERT(hole.GetOrientation() == TPPL_CW);
         }
@@ -382,11 +383,11 @@ namespace sneaky
                 path[p] = vec2f(cpath[p].X / clipperScale, cpath[p].Y / clipperScale);
         }
 
-        rob::log::Debug("Solids: ", m_solids.size(), ", holes: ", m_holes.size());
-        for (size_t s = 0; s < m_solids.size(); s++)
-            rob::log::Debug("s", s, ": ", m_solids[s].size());
-        for (size_t h = 0; h < m_holes.size(); h++)
-            rob::log::Debug("h", h, ": ", m_holes[h].size());
+//        rob::log::Debug("Solids: ", m_solids.size(), ", holes: ", m_holes.size());
+//        for (size_t s = 0; s < m_solids.size(); s++)
+//            rob::log::Debug("s", s, ": ", m_solids[s].size());
+//        for (size_t h = 0; h < m_holes.size(); h++)
+//            rob::log::Debug("h", h, ": ", m_holes[h].size());
 
 
         for (size_t s = 0; s < solids.size(); s++)
@@ -502,7 +503,6 @@ namespace sneaky
                         refinedFaces++;
                         face.flags = 1;
                         neighbour.flags = 1;
-//                        continue;
 
                         const index_t fn_p = face.neighbours[prevV[ni]];
                         const index_t fn_n = face.neighbours[nextV[ni]];
