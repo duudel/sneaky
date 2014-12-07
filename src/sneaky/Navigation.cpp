@@ -103,6 +103,27 @@ namespace sneaky
     void Navigation::ReturnNavPath(NavPath *path)
     { m_np.Return(path); }
 
+    static inline vec2f ClosestPointOnEdge(const vec2f &a, const vec2f &b, const vec2f &p)
+    {
+        const vec2f e = b - a;
+        const vec2f v = p - a;
+        const float d = e.Dot(e);
+        float t = e.Dot(v);
+        if (d > 0) t /= d;
+        if (t < 0) t = 0;
+        else if (t > 1) t = 1;
+        return a + t * e;
+    }
+
+    vec2f Navigation::CalculateNodePos(index_t face, int edge, const vec2f &prevPos) const
+    {
+        static const int nextV[] = { 1, 2, 0 };
+        const NavMesh::Face &f = m_mesh.GetFace(face);
+        const NavMesh::Vert &vert0 = m_mesh.GetVertex(f.vertices[edge]);
+        const NavMesh::Vert &vert1 = m_mesh.GetVertex(f.vertices[nextV[edge]]);
+        return ClosestPointOnEdge(vec2f(vert0.x, vert0.y), vec2f(vert1.x, vert1.y), prevPos);
+    }
+
     bool Navigation::FindNodePath(const vec2f &start, const vec2f &end, index_t startFace, index_t endFace)
     {
 //        rob::log::Info("Nav: Start node: ", startFace, ", end node: ", endFace, ", faces:", m_mesh.GetFaceCount());
@@ -171,6 +192,7 @@ namespace sneaky
                 if (!m_nodes[v].posCalculated)
                 {
                     m_nodes[v].pos = m_mesh.GetEdgeCenter(u, i);
+//                    m_nodes[v].pos = CalculateNodePos(u, i, m_nodes[u].pos);
                     m_nodes[v].posCalculated = true;
                 }
 
@@ -209,6 +231,8 @@ namespace sneaky
             m_path.path[i] = u;
             u = m_nodes[u].prev;
         }
+
+        rob::log::Info("Path length: ", m_nodes[endFace].dist);
 
 //        rob::log::Info("Nav: Nodes in node path: ", m_path.len);
 
@@ -455,6 +479,9 @@ namespace sneaky
             const NavMesh::Vert &v0 = m_mesh.GetVertex(f.vertices[0]);
             const NavMesh::Vert &v1 = m_mesh.GetVertex(f.vertices[1]);
             const NavMesh::Vert &v2 = m_mesh.GetVertex(f.vertices[2]);
+
+            const vec2f &np = m_nodes[m_path.path[i]].pos;
+            renderer->DrawCircle(np.x, np.y, 0.2f);
 
             renderer->DrawLine(v0.x, v0.y, v1.x, v1.y);
             renderer->DrawLine(v1.x, v1.y, v2.x, v2.y);
