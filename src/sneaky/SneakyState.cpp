@@ -246,6 +246,9 @@ namespace sneaky
 //        object->SetTexture(GetCache().GetTexture("wall.tex"));
         object->SetColor(Color(0.65f, 0.63f, 0.65f));
 
+        object->AddDrawable(GetCache().GetTexture("roof.tex"), 1.0f, false, 3);
+        object->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.2f, false, 2);
+
         b2PolygonShape shape;
         shape.SetAsBox(w, h);
         b2Fixture *fix = body->CreateFixture(&shape, 1.0f);
@@ -268,8 +271,11 @@ namespace sneaky
         b2Body *plBody = m_world->CreateBody(&pldef);
 
         pl->SetBody(plBody);
-        pl->SetTexture(GetCache().GetTexture("player.tex"));
-        pl->SetTextureScale(CHARACTER_SCALE);
+//        pl->SetTexture(GetCache().GetTexture("player.tex"));
+//        pl->SetTextureScale(CHARACTER_SCALE);
+
+        pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 1);
+        pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 0);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -297,8 +303,11 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&bodyDef);
 
         guard->SetBody(body);
-        guard->SetTexture(GetCache().GetTexture("guard.tex"));
-        guard->SetTextureScale(CHARACTER_SCALE);
+//        guard->SetTexture(GetCache().GetTexture("guard.tex"));
+//        guard->SetTextureScale(CHARACTER_SCALE);
+
+        guard->AddDrawable(GetCache().GetTexture("guard.tex"), CHARACTER_SCALE, false, 1);
+        guard->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 0);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -544,10 +553,18 @@ namespace sneaky
         m_drawables[m_drawableCount++] = drawable;
     }
 
+    static bool CompareDrawables(const Drawable *a, const Drawable *b)
+    { return a->GetLayer() < b->GetLayer(); }
+
     void SneakyState::DrawDrawables()
     {
-        // TODO: sort drawables
-        // TODO: draw drawables
+        Renderer &renderer = GetRenderer();
+        std::sort(m_drawables, m_drawables+m_drawableCount, CompareDrawables);
+        for (size_t i = 0; i < m_drawableCount; i++)
+        {
+            const Drawable *drawable = m_drawables[i];
+            drawable->Draw(&renderer);
+        }
         m_drawableCount = 0;
     }
 

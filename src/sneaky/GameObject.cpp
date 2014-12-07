@@ -13,11 +13,35 @@ namespace sneaky
 
 
     Drawable::Drawable()
-        : m_texture(InvalidHandle)
+        : m_object(nullptr)
+        , m_texture(InvalidHandle)
         , m_scale(1.0f)
         , m_additive(false)
         , m_layer(0)
     { }
+
+    void Drawable::SetObject(GameObject *object)
+    { m_object = object; }
+
+    void Drawable::Draw(Renderer *renderer) const
+    {
+        if (m_texture == InvalidHandle) return;
+
+//        if (m_brain && m_debugDraw)
+//            renderer->SetColor(m_debugColor);
+//        else
+//            renderer->SetColor(m_color);
+        renderer->SetColor(Color::White);
+
+        const mat4f model = FromB2Transform(m_object->GetBody()->GetTransform());
+        renderer->SetModel(model);
+
+        const vec2f dim = m_object->GetDimensions() * m_scale;
+        renderer->GetGraphics()->SetUniform(renderer->GetGlobals().texture0, 1);
+        renderer->GetGraphics()->BindTexture(1, m_texture);
+        renderer->BindTextureShader();
+        renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
+    }
 
     void Drawable::SetTexture(TextureHandle texture)
     { m_texture = texture; }
@@ -128,6 +152,7 @@ namespace sneaky
     {
         ROB_ASSERT(m_drawableCount < MAX_DRAWABLES);
         Drawable *drawable = &m_drawables[m_drawableCount++];
+        drawable->SetObject(this);
         drawable->SetTexture(texture);
         return drawable;
     }
@@ -185,28 +210,27 @@ namespace sneaky
         else
             renderer->SetColor(m_color);
 
-        const b2Fixture *fixture = m_body->GetFixtureList();
-        const b2Shape *shape = fixture->GetShape();
-
         const mat4f model = FromB2Transform(m_body->GetTransform());
         renderer->SetModel(model);
 
         if (m_texture == InvalidHandle)
         {
-            renderer->BindColorShader();
-            switch (shape->GetType())
-            {
-            case b2Shape::e_polygon:
-                renderer->DrawFilledRectangle(-dim.x, -dim.y, dim.x, dim.y);
-                break;
-
-            case b2Shape::e_circle:
-                renderer->DrawFilledCircle(0.0f, 0.0f, dim.x);
-                break;
-
-            default:
-                break;
-            }
+//            const b2Fixture *fixture = m_body->GetFixtureList();
+//            const b2Shape *shape = fixture->GetShape();
+//            renderer->BindColorShader();
+//            switch (shape->GetType())
+//            {
+//            case b2Shape::e_polygon:
+//                renderer->DrawFilledRectangle(-dim.x, -dim.y, dim.x, dim.y);
+//                break;
+//
+//            case b2Shape::e_circle:
+//                renderer->DrawFilledCircle(0.0f, 0.0f, dim.x);
+//                break;
+//
+//            default:
+//                break;
+//            }
         }
         else
         {

@@ -22,11 +22,14 @@ namespace sneaky
     using rob::Color;
 
     class Brain;
+    class GameObject;
 
     class Drawable
     {
     public:
         Drawable();
+
+        void SetObject(GameObject *object);
 
         void SetTexture(rob::TextureHandle texture);
         void SetTextureScale(float scale);
@@ -37,7 +40,10 @@ namespace sneaky
         void SetAdditive(bool additive);
         bool IsAdditive() const;
 
+        void Draw(rob::Renderer *renderer) const;
+
     private:
+        GameObject *m_object;
 //        Color m_color;
         rob::TextureHandle m_texture;
         float m_scale;
