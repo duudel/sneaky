@@ -37,6 +37,9 @@ namespace sneaky
 
         GameObject* CreateObject(GameObject *prevLink = nullptr);
         GameObject* CreateStaticBox(const vec2f &position, float angle, float w, float h);
+        GameObject* CreateHouse(const vec2f &position, float angle, float w, float h);
+
+        GameObject* CreateCharacter(const vec2f &position);
         GameObject* CreatePlayer(const vec2f &position);
         GameObject* CreateGuard(const vec2f &position);
         GameObject* CreateCake(const vec2f &position);

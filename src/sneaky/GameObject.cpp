@@ -47,7 +47,10 @@ namespace sneaky
     { m_texture = texture; }
 
     void Drawable::SetTextureScale(float scale)
-    { m_scale = scale; }
+    { m_scale = vec2f(scale); }
+
+    void Drawable::SetTextureScale(float scaleX, float scaleY)
+    { m_scale = vec2f(scaleX, scaleY); }
 
     void Drawable::SetLayer(int layer)
     { m_layer = layer; }

@@ -33,6 +33,7 @@ namespace sneaky
 
         void SetTexture(rob::TextureHandle texture);
         void SetTextureScale(float scale);
+        void SetTextureScale(float scaleX, float scaleY);
 
         void SetLayer(int layer);
         int GetLayer() const;
@@ -46,7 +47,7 @@ namespace sneaky
         GameObject *m_object;
 //        Color m_color;
         rob::TextureHandle m_texture;
-        float m_scale;
+        vec2f m_scale;
         bool m_additive;
         int m_layer;
     };

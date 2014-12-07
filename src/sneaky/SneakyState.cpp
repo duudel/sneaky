@@ -142,6 +142,14 @@ namespace sneaky
 //        return true;
     }
 
+    void SneakyState::Navigate(const vec2f &start, const vec2f &end)
+    {
+        m_pathStart = start;
+        m_pathEnd = end;
+        m_nav.Navigate(start, end, m_path);
+    }
+
+
     //float g_theta;
 
     void SneakyState::CreateWorld()
@@ -157,7 +165,6 @@ namespace sneaky
         const float x0 = PLAY_AREA_LEFT;
         const float y0 = PLAY_AREA_BOTTOM;
 
-        //const float theta = m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
         //g_theta = 0.0f; //m_random.GetReal(-1.0f, 1.0f) * 10.0f * rob::DEG2RAD;
 
         for (int i = 0; i < buildings; i++)
@@ -184,7 +191,7 @@ namespace sneaky
             x += margin2 + m_random.GetReal(0.0f, delta_x);
             y += margin2 + m_random.GetReal(0.0f, delta_y);
 
-            CreateStaticBox(vec2f(x + w2, y + h2), /*theta + */m_random.GetReal(-1.0f, 1.0f) * 2.5f * rob::DEG2RAD, w2, h2);
+            CreateHouse(vec2f(x + w2, y + h2), /*theta + */m_random.GetReal(-1.0f, 1.0f) * 2.5f * rob::DEG2RAD, w2, h2);
         }
 
         const float wallSize = 4.0f;
@@ -216,13 +223,6 @@ namespace sneaky
         CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
-    void SneakyState::Navigate(const vec2f &start, const vec2f &end)
-    {
-        m_pathStart = start;
-        m_pathEnd = end;
-        m_nav.Navigate(start, end, m_path);
-    }
-
     GameObject* SneakyState::CreateObject(GameObject *prevLink /*= nullptr*/)
     {
         ROB_ASSERT(m_objectCount < MAX_OBJECTS);
@@ -242,12 +242,10 @@ namespace sneaky
         def.position = ToB2(position);
         def.angle = angle;
         b2Body *body = m_world->CreateBody(&def);
+
         object->SetBody(body);
 //        object->SetTexture(GetCache().GetTexture("wall.tex"));
         object->SetColor(Color(0.65f, 0.63f, 0.65f));
-
-        object->AddDrawable(GetCache().GetTexture("roof.tex"), 1.0f, false, 3);
-        object->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.2f, false, 2);
 
         b2PolygonShape shape;
         shape.SetAsBox(w, h);
@@ -260,22 +258,39 @@ namespace sneaky
         return object;
     }
 
-    GameObject* SneakyState::CreatePlayer(const vec2f &position)
+    GameObject* SneakyState::CreateHouse(const vec2f &position, float angle, float w, float h)
     {
-        GameObject *pl = CreateObject(nullptr);
+        GameObject *house = CreateStaticBox(position, angle, w, h);
 
-        b2BodyDef pldef;
-        pldef.type = b2_dynamicBody;
-        pldef.userData = pl;
-        pldef.position = ToB2(position);
-        b2Body *plBody = m_world->CreateBody(&pldef);
+//        const float ratio = w / h;
+        const float r = 2.0f;
+        const float scaleX = (w + r) / w;
+        const float scaleY = (h + r) / h;
 
-        pl->SetBody(plBody);
-//        pl->SetTexture(GetCache().GetTexture("player.tex"));
-//        pl->SetTextureScale(CHARACTER_SCALE);
+        house->AddDrawable(GetCache().GetTexture("roof.tex"), 1.0f, false, 4);
+//        house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.2f, false, 3);
+        Drawable *shadow = house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.0f, false, 3);
+//        shadow->SetTextureScale(1.2f, ratio * 1.2f);
+        shadow->SetTextureScale(scaleX, scaleY);
 
-        pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 1);
-        pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 0);
+        Drawable *grass = house->AddDrawable(GetCache().GetTexture("grass.tex"), 1.3f, false, 0);
+//        grass->SetTextureScale(1.3f, ratio * 1.3f);
+        grass->SetTextureScale(scaleX, scaleY);
+
+        return house;
+    }
+
+    GameObject* SneakyState::CreateCharacter(const vec2f &position)
+    {
+        GameObject *object = CreateObject(nullptr);
+
+        b2BodyDef def;
+        def.type = b2_dynamicBody;
+        def.userData = object;
+        def.position = ToB2(position);
+        b2Body *body = m_world->CreateBody(&def);
+
+        object->SetBody(body);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -283,11 +298,20 @@ namespace sneaky
         fixDef.shape = &shape;
         fixDef.density = 1.0f;
         fixDef.filter.categoryBits = PlayerBit;
-        plBody->CreateFixture(&fixDef);
+        body->CreateFixture(&fixDef);
+        return object;
+    }
+
+    GameObject* SneakyState::CreatePlayer(const vec2f &position)
+    {
+        GameObject *pl = CreateCharacter(position);
+
+        pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 2);
+        pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 1);
 
         PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
-
         pl->SetBrain(brain);
+
         return pl;
     }
 
@@ -574,16 +598,16 @@ namespace sneaky
         renderer.SetView(m_view);
         renderer.SetModel(mat4f::Identity);
 
-        renderer.SetColor(Color(0.14f, 0.14f, 0.16f));
-        renderer.BindColorShader();
-        renderer.DrawFilledRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
+//        renderer.SetColor(Color(0.14f, 0.14f, 0.16f));
+//        renderer.BindColorShader();
+//        renderer.DrawFilledRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
 
 //        renderer.SetModel(mat4f::Identity);
-//        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("bg.tex"));
-//        renderer.GetGraphics()->SetUniform(renderer.GetGlobals().texture0, 0);
-//        renderer.SetColor(Color(1.0f, 1.0f, 1.0f, 1.0f));
-//        renderer.BindTextureShader();
-//        renderer.DrawTexturedRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
+        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("ground.tex"));
+        renderer.GetGraphics()->SetUniform(renderer.GetGlobals().texture0, 0);
+        renderer.SetColor(Color::White);
+        renderer.BindTextureShader();
+        renderer.DrawTexturedRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
 
         for (size_t i = 0; i < m_objectCount; i++)
         {
