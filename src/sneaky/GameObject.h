@@ -31,6 +31,8 @@ namespace sneaky
 
         void SetObject(GameObject *object);
 
+        void SetColor(const rob::Color &color);
+
         void SetTexture(rob::TextureHandle texture);
         void SetTextureScale(float scale);
         void SetTextureScale(float scaleX, float scaleY);
@@ -45,7 +47,7 @@ namespace sneaky
 
     private:
         GameObject *m_object;
-//        Color m_color;
+        Color m_color;
         rob::TextureHandle m_texture;
         vec2f m_scale;
         bool m_additive;

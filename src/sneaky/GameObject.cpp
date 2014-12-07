@@ -14,6 +14,7 @@ namespace sneaky
 
     Drawable::Drawable()
         : m_object(nullptr)
+        , m_color(Color::White)
         , m_texture(InvalidHandle)
         , m_scale(1.0f)
         , m_additive(false)
@@ -31,7 +32,20 @@ namespace sneaky
 //            renderer->SetColor(m_debugColor);
 //        else
 //            renderer->SetColor(m_color);
-        renderer->SetColor(Color::White);
+//        renderer->SetColor(Color::White);
+
+        Color color(m_color);
+        if (m_additive)
+        {
+            renderer->GetGraphics()->SetBlendAdditive();
+        }
+        else
+        {
+//            color = Color(m_color.ToVec4() * vec4f(0.75f, 0.75f, 0.9f, 1.0f));
+            color = Color(m_color.ToVec4() * vec4f(0.5f, 0.5f, 0.75f, 1.0f));
+            renderer->GetGraphics()->SetBlendAlpha();
+        }
+        renderer->SetColor(color);
 
         const mat4f model = FromB2Transform(m_object->GetBody()->GetTransform());
         renderer->SetModel(model);
@@ -42,6 +56,9 @@ namespace sneaky
         renderer->BindTextureShader();
         renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
     }
+
+    void Drawable::SetColor(const rob::Color &color)
+    { m_color = color; }
 
     void Drawable::SetTexture(TextureHandle texture)
     { m_texture = texture; }

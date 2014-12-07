@@ -2,6 +2,8 @@
 #ifndef H_ROB_COLOR_H
 #define H_ROB_COLOR_H
 
+#include "../math/Vector4.h"
+
 namespace rob
 {
 
@@ -12,6 +14,10 @@ namespace rob
             : r(x), g(x), b(x), a(1.0f) { }
         Color(float ar, float ag, float ab, float aa = 1.0f)
             : r(ar), g(ag), b(ab), a(aa) { }
+        explicit Color(const vec4f &vec)
+            : r(vec.x), g(vec.y), b(vec.z), a(vec.w) { }
+
+        vec4f ToVec4() const { return vec4f(r, g, b, a); }
 
         float r, g, b, a;
 

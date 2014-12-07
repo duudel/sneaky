@@ -26,7 +26,7 @@ namespace sneaky
     static const float PLAY_AREA_BOTTOM = -PLAY_AREA_H / 2.0f;
     static const float PLAY_AREA_TOP    = -PLAY_AREA_BOTTOM;
 
-    static const float CHARACTER_SCALE = 1.4f;
+    static const float CHARACTER_SCALE = 1.2f;
 
     static const size_t MAX_DRAWABLES = 256;
 
@@ -69,7 +69,7 @@ namespace sneaky
         , m_path(nullptr)
         , m_pathStart(0.0f, 0.0f)
         , m_pathEnd(0.0f, 0.0f)
-        , m_drawNav(true)
+        , m_drawNav(false)
         , m_sensorListener()
         , m_fadeEffect(Color(0.04f, 0.01f, 0.01f))
         , m_random()
@@ -244,7 +244,6 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&def);
 
         object->SetBody(body);
-//        object->SetTexture(GetCache().GetTexture("wall.tex"));
         object->SetColor(Color(0.65f, 0.63f, 0.65f));
 
         b2PolygonShape shape;
@@ -262,25 +261,30 @@ namespace sneaky
     {
         GameObject *house = CreateStaticBox(position, angle, w, h);
 
-//        const float ratio = w / h;
         const float r = 2.0f;
         const float scaleX = (w + r) / w;
         const float scaleY = (h + r) / h;
 
-        house->AddDrawable(GetCache().GetTexture("roof.tex"), 1.0f, false, 4);
-//        house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.2f, false, 3);
+        const char *roofTex = w > h ? "roof_w.tex" : "roof.tex";
+
+        Drawable *roof = house->AddDrawable(GetCache().GetTexture(ResourceID(roofTex)), 1.0f, false, 4);
+        const float rand = m_random.GetReal(0.8, 1.0);
+        const float randR = rand * m_random.GetReal(0.96, 1.04);
+        const float randG = rand * m_random.GetReal(0.96, 1.04);
+        const float randB = rand * m_random.GetReal(0.96, 1.04);
+        roof->SetColor(Color(randR, randG, randB));
+
         Drawable *shadow = house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.0f, false, 3);
-//        shadow->SetTextureScale(1.2f, ratio * 1.2f);
+        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.35f));
         shadow->SetTextureScale(scaleX, scaleY);
 
         Drawable *grass = house->AddDrawable(GetCache().GetTexture("grass.tex"), 1.3f, false, 0);
-//        grass->SetTextureScale(1.3f, ratio * 1.3f);
         grass->SetTextureScale(scaleX, scaleY);
 
         return house;
     }
 
-    GameObject* SneakyState::CreateCharacter(const vec2f &position)
+    GameObject* SneakyState::CreateCharacter(const vec2f &position, uint16_t categoryBits)
     {
         GameObject *object = CreateObject(nullptr);
 
@@ -297,14 +301,14 @@ namespace sneaky
         b2FixtureDef fixDef;
         fixDef.shape = &shape;
         fixDef.density = 1.0f;
-        fixDef.filter.categoryBits = PlayerBit;
+        fixDef.filter.categoryBits = categoryBits;
         body->CreateFixture(&fixDef);
         return object;
     }
 
     GameObject* SneakyState::CreatePlayer(const vec2f &position)
     {
-        GameObject *pl = CreateCharacter(position);
+        GameObject *pl = CreateCharacter(position, PlayerBit);
 
         pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 2);
         pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 1);
@@ -317,33 +321,16 @@ namespace sneaky
 
     GameObject* SneakyState::CreateGuard(const vec2f &position)
     {
-        GameObject *guard = CreateObject(nullptr);
+        GameObject *guard = CreateCharacter(position, GuardBit);
 
-        b2BodyDef bodyDef;
-//        bodyDef.type = b2_kinematicBody;
-        bodyDef.type = b2_dynamicBody;
-        bodyDef.userData = guard;
-        bodyDef.position = ToB2(position);
-        b2Body *body = m_world->CreateBody(&bodyDef);
-
-        guard->SetBody(body);
-//        guard->SetTexture(GetCache().GetTexture("guard.tex"));
-//        guard->SetTextureScale(CHARACTER_SCALE);
-
-        guard->AddDrawable(GetCache().GetTexture("guard.tex"), CHARACTER_SCALE, false, 1);
+        Drawable *light = guard->AddDrawable(GetCache().GetTexture("lantern_light.tex"), CHARACTER_SCALE * 16.0f, true, 3);
+        light->SetColor(Color(1.0f, 1.0f, 1.0f, 0.25f));
+        guard->AddDrawable(GetCache().GetTexture("guard.tex"), CHARACTER_SCALE, false, 2);
         guard->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 0);
 
-        b2CircleShape shape;
-        shape.m_radius = 1.0f;
-        b2FixtureDef fixDef;
-        fixDef.shape = &shape;
-        fixDef.density = 1.0f;
-        fixDef.filter.categoryBits = GuardBit;
-        body->CreateFixture(&fixDef);
-
         Brain *brain = GetAllocator().new_object<GuardBrain>(this, &m_nav, m_random);
-
         guard->SetBrain(brain);
+
         return guard;
     }
 
@@ -590,6 +577,8 @@ namespace sneaky
             drawable->Draw(&renderer);
         }
         m_drawableCount = 0;
+
+        renderer.GetGraphics()->SetBlendAlpha();
     }
 
     void SneakyState::Render()
@@ -603,7 +592,7 @@ namespace sneaky
 //        renderer.DrawFilledRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
 
 //        renderer.SetModel(mat4f::Identity);
-        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("ground.tex"));
+        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("ground2.tex"));
         renderer.GetGraphics()->SetUniform(renderer.GetGlobals().texture0, 0);
         renderer.SetColor(Color::White);
         renderer.BindTextureShader();
