@@ -28,6 +28,8 @@ namespace sneaky
 
     static const float CHARACTER_SCALE = 1.4f;
 
+    static const size_t MAX_DRAWABLES = 256;
+
     float g_zoom = 1.0f;
 
     struct Rect
@@ -59,6 +61,8 @@ namespace sneaky
         , m_objectPool()
         , m_objects(nullptr)
         , m_objectCount(0)
+        , m_drawables(nullptr)
+        , m_drawableCount(0)
         , m_input()
         , m_nav()
         , m_debugAi(false)
@@ -91,6 +95,8 @@ namespace sneaky
     {
         m_objectPool.SetMemory(GetAllocator().AllocateArray<GameObject>(MAX_OBJECTS), GetArraySize<GameObject>(MAX_OBJECTS));
         m_objects = GetAllocator().AllocateArray<GameObject*>(MAX_OBJECTS);
+
+        m_drawables = GetAllocator().AllocateArray<const Drawable*>(MAX_DRAWABLES);
 
         m_debugDraw = GetAllocator().new_object<DebugDraw>(&GetRenderer());
         int32 flags = 0;
@@ -532,6 +538,19 @@ namespace sneaky
         }
     }
 
+    void SneakyState::AddDrawable(const Drawable *drawable)
+    {
+        ROB_ASSERT(m_drawableCount < MAX_DRAWABLES);
+        m_drawables[m_drawableCount++] = drawable;
+    }
+
+    void SneakyState::DrawDrawables()
+    {
+        // TODO: sort drawables
+        // TODO: draw drawables
+        m_drawableCount = 0;
+    }
+
     void SneakyState::Render()
     {
         Renderer &renderer = GetRenderer();
@@ -548,6 +567,17 @@ namespace sneaky
 //        renderer.SetColor(Color(1.0f, 1.0f, 1.0f, 1.0f));
 //        renderer.BindTextureShader();
 //        renderer.DrawTexturedRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
+
+        for (size_t i = 0; i < m_objectCount; i++)
+        {
+            const GameObject *object = m_objects[i];
+            const Drawable *drawables = object->GetDrawables();
+            for (size_t j = 0; j < object->GetDrawableCount(); j++)
+            {
+                AddDrawable(&drawables[j]);
+            }
+        }
+        DrawDrawables();
 
         int maxLayer = 0, layer;
         for (layer = 0; layer < maxLayer + 1 && layer < 2; layer++)

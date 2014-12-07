@@ -67,6 +67,9 @@ namespace sneaky
 
         void OnKeyPress(rob::Keyboard::Key key, rob::Keyboard::Scancode scancode, rob::uint32_t mods) override;
         void OnMouseDown(rob::MouseButton button, int x, int y) override;
+    private:
+        void AddDrawable(const Drawable *drawable);
+        void DrawDrawables();
 
     private:
         GameData &m_gameData;
@@ -86,6 +89,9 @@ namespace sneaky
         size_t m_objectCount;
 
         GameObject *m_cake;
+
+        const Drawable **m_drawables;
+        size_t m_drawableCount;
 
         Input m_input;
 

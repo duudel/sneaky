@@ -23,6 +23,28 @@ namespace sneaky
 
     class Brain;
 
+    class Drawable
+    {
+    public:
+        Drawable();
+
+        void SetTexture(rob::TextureHandle texture);
+        void SetTextureScale(float scale);
+
+        void SetLayer(int layer);
+        int GetLayer() const;
+
+        void SetAdditive(bool additive);
+        bool IsAdditive() const;
+
+    private:
+//        Color m_color;
+        rob::TextureHandle m_texture;
+        float m_scale;
+        bool m_additive;
+        int m_layer;
+    };
+
     class GameObject
     {
     public:
@@ -49,6 +71,11 @@ namespace sneaky
 
         void SetBrain(Brain *brain);
         Brain* GetBrain();
+
+        Drawable* AddDrawable(rob::TextureHandle texture);
+        Drawable* AddDrawable(rob::TextureHandle texture, float scale, bool additive, int layer);
+        const Drawable* GetDrawables() const;
+        size_t GetDrawableCount() const;
 
         void SetColor(const Color &color);
         Color GetColor() const;
@@ -92,6 +119,11 @@ namespace sneaky
 
         bool m_destroyed;
         bool m_debugDraw;
+
+        static const size_t MAX_DRAWABLES = 4;
+
+        Drawable m_drawables[MAX_DRAWABLES];
+        size_t m_drawableCount;
 
         GameObject *m_next;
     };

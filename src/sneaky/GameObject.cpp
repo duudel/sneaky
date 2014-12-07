@@ -10,6 +10,35 @@ namespace sneaky
 
     using namespace rob;
 
+
+
+    Drawable::Drawable()
+        : m_texture(InvalidHandle)
+        , m_scale(1.0f)
+        , m_additive(false)
+        , m_layer(0)
+    { }
+
+    void Drawable::SetTexture(TextureHandle texture)
+    { m_texture = texture; }
+
+    void Drawable::SetTextureScale(float scale)
+    { m_scale = scale; }
+
+    void Drawable::SetLayer(int layer)
+    { m_layer = layer; }
+
+    int Drawable::GetLayer() const
+    { return m_layer; }
+
+    void Drawable::SetAdditive(bool additive)
+    { m_additive = additive; }
+
+    bool Drawable::IsAdditive() const
+    { return m_additive; }
+
+
+
     GameObject::GameObject()
         : m_body(nullptr)
         , m_brain(nullptr)
@@ -20,6 +49,7 @@ namespace sneaky
         , m_renderLayer(0)
         , m_destroyed(false)
         , m_debugDraw(false)
+        , m_drawableCount(0)
         , m_next(nullptr)
     { }
 
@@ -93,6 +123,29 @@ namespace sneaky
 
     Brain* GameObject::GetBrain()
     { return m_brain; }
+
+    Drawable* GameObject::AddDrawable(TextureHandle texture)
+    {
+        ROB_ASSERT(m_drawableCount < MAX_DRAWABLES);
+        Drawable *drawable = &m_drawables[m_drawableCount++];
+        drawable->SetTexture(texture);
+        return drawable;
+    }
+
+    Drawable* GameObject::AddDrawable(TextureHandle texture, float scale, bool additive, int layer)
+    {
+        Drawable *drawable = AddDrawable(texture);
+        drawable->SetTextureScale(scale);
+        drawable->SetAdditive(additive);
+        drawable->SetLayer(layer);
+        return drawable;
+    }
+
+    const Drawable* GameObject::GetDrawables() const
+    { return m_drawables; }
+
+    size_t GameObject::GetDrawableCount() const
+    { return m_drawableCount; }
 
     void GameObject::SetColor(const Color &color)
     { m_color = color; }
