@@ -142,6 +142,7 @@ namespace sneaky
         {
             m_stuckMeter = 0.0f;
             m_pathPos++;
+            return;
         }
 
         const vec2f destDir = delta.SafeNormalized();

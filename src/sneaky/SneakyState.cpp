@@ -72,7 +72,7 @@ namespace sneaky
     {
         m_gameData.m_score = 0;
         m_random.Seed(GetTicks());
-//        GetWindow().GrabMouse();
+        GetWindow().GrabMouse();
     }
 
     SneakyState::~SneakyState()
@@ -202,12 +202,12 @@ namespace sneaky
 
 //        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
-//        for (size_t i = 0; i < 10; i++)
-//        {
-//            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
-//        }
+        for (size_t i = 0; i < 10; i++)
+        {
+            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+        }
 
-//        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
+        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
     void SneakyState::Navigate(const vec2f &start, const vec2f &end)
@@ -642,6 +642,8 @@ namespace sneaky
 
         // TODO: These are for debugging
         {
+            if (key == Keyboard::Key::LAlt)
+                GetWindow().ToggleGrabMouse();
             if (key == Keyboard::Key::F)
                 m_nav.GetMesh().Flood();
             if (key == Keyboard::Key::R)
