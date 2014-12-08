@@ -265,7 +265,12 @@ namespace sneaky
         const float scaleX = (w + r) / w;
         const float scaleY = (h + r) / h;
 
-        const char *roofTex = w > h ? "hay_roof_w.tex" : "roof.tex";
+        const char *roofTex;
+        if (m_random.GetInt(0, 2) == 0)
+            roofTex = w > h ? "hay_roof_w.tex" : "hay_roof.tex";
+        else
+            roofTex = w > h ? "roof_w.tex" : "roof.tex";
+
 
         Drawable *roof = house->AddDrawable(GetCache().GetTexture(ResourceID(roofTex)), 1.0f, false, 4);
         const float rand = m_random.GetReal(0.8, 1.0);
@@ -274,11 +279,12 @@ namespace sneaky
         const float randB = rand * m_random.GetReal(0.96, 1.04);
         roof->SetColor(Color(randR, randG, randB));
 
-        Drawable *shadow = house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.0f, false, 3);
-        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.3f));
-        shadow->SetTextureScale(scaleX * 0.98f, scaleY * 0.98f);
+//        Drawable *shadow = house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.0f, false, 3);
+//        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.3f));
+//        shadow->SetTextureScale(scaleX * 0.8f, scaleY * 0.8f);
 
         Drawable *grass = house->AddDrawable(GetCache().GetTexture("grass.tex"), 1.3f, false, 0);
+        grass->SetColor(Color(0.8f, 0.8f, 0.6f));
         grass->SetTextureScale(scaleX, scaleY);
 
         return house;
