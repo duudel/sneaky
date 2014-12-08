@@ -213,7 +213,7 @@ namespace sneaky
         m_pathEnd = vec2f(PLAY_AREA_W, PLAY_AREA_W);
         Navigate(m_pathStart, m_pathEnd);
 
-//        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
+        m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
         for (size_t i = 0; i < 10; i++)
         {
@@ -265,7 +265,7 @@ namespace sneaky
         const float scaleX = (w + r) / w;
         const float scaleY = (h + r) / h;
 
-        const char *roofTex = w > h ? "roof_w.tex" : "roof.tex";
+        const char *roofTex = w > h ? "hay_roof_w.tex" : "roof.tex";
 
         Drawable *roof = house->AddDrawable(GetCache().GetTexture(ResourceID(roofTex)), 1.0f, false, 4);
         const float rand = m_random.GetReal(0.8, 1.0);
@@ -275,8 +275,8 @@ namespace sneaky
         roof->SetColor(Color(randR, randG, randB));
 
         Drawable *shadow = house->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.0f, false, 3);
-        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.35f));
-        shadow->SetTextureScale(scaleX, scaleY);
+        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.3f));
+        shadow->SetTextureScale(scaleX * 0.98f, scaleY * 0.98f);
 
         Drawable *grass = house->AddDrawable(GetCache().GetTexture("grass.tex"), 1.3f, false, 0);
         grass->SetTextureScale(scaleX, scaleY);
@@ -313,6 +313,9 @@ namespace sneaky
         pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 2);
         pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 1);
 
+        Drawable *blob = pl->AddDrawable(GetCache().GetTexture("light_blob.tex"), 4.0f, true, 3);
+        blob->SetColor(Color(0.4f, 0.6f, 1.0f, 0.25f));
+
         PlayerBrain *brain = GetAllocator().new_object<PlayerBrain>(this, &m_input);
         pl->SetBrain(brain);
 
@@ -345,8 +348,9 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&bodyDef);
 
         cake->SetBody(body);
-//        cake->SetTexture(GetCache().GetTexture("cake.tex"));
-        cake->AddDrawable(GetCache().GetTexture("cake.tex"));
+        cake->AddDrawable(GetCache().GetTexture("cake.tex"), 1.0f, false, 2);
+        Drawable *blob = cake->AddDrawable(GetCache().GetTexture("light_blob.tex"), 4.0f, true , 3);
+        blob->SetColor(Color(1.0f, 0.6f, 0.4f, 0.25f));
 
         b2CircleShape shape;
         shape.m_radius = 1.5f;
