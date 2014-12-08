@@ -38,8 +38,8 @@ namespace sneaky
     void GuardBrain::OnInitialize()
     {
         b2PolygonShape rightShape, leftShape;
-        rightShape.SetAsBox(0.5f, 2.0f, b2Vec2(0.5f, 2.0f), 0.0f);
-        leftShape.SetAsBox(0.5f, 2.0f, b2Vec2(-0.5f, 2.0f), 0.0f);
+        rightShape.SetAsBox(0.5f, 1.0f, b2Vec2(0.5f, 2.0f), 0.0f);
+        leftShape.SetAsBox(0.5f, 1.0f, b2Vec2(-0.5f, 2.0f), 0.0f);
 
         m_rightSensor.SetBody(m_owner->GetBody());
         m_rightSensor.SetShape(&rightShape);
@@ -146,12 +146,15 @@ namespace sneaky
         }
 
         const vec2f destDir = delta.SafeNormalized();
-        vec2f offset = destDir;
+        vec2f offset = destDir + FromB2(m_owner->GetBody()->GetLinearVelocity());
+//        vec2f offset = Lerp(destDir, FromB2(m_owner->GetBody()->GetLinearVelocity()), 0.5f);
 
         const vec2f dir = offset.SafeNormalized();
         const vec2f velocity = dir * speed;
         m_owner->GetBody()->SetLinearVelocity(ToB2(velocity));
+
         m_owner->SetRotation(dir);
+        m_owner->GetBody()->SetAngularVelocity(0.0f);
 
         m_stuckMeter += speed * dt - rob::Distance(m_prevPosition, m_owner->GetPosition());
     }

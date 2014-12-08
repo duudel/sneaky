@@ -232,7 +232,7 @@ namespace sneaky
             u = m_nodes[u].prev;
         }
 
-        rob::log::Info("Path length: ", m_nodes[endFace].dist);
+//        rob::log::Info("Path length: ", m_nodes[endFace].dist);
 
 //        rob::log::Info("Nav: Nodes in node path: ", m_path.len);
 

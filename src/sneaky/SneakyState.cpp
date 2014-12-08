@@ -301,6 +301,7 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&def);
 
         object->SetBody(body);
+//        object->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 1);
 
         b2CircleShape shape;
         shape.m_radius = 1.0f;
@@ -317,7 +318,6 @@ namespace sneaky
         GameObject *pl = CreateCharacter(position, PlayerBit);
 
         pl->AddDrawable(GetCache().GetTexture("player.tex"), CHARACTER_SCALE, false, 2);
-        pl->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 1);
 
         Drawable *blob = pl->AddDrawable(GetCache().GetTexture("light_blob.tex"), 4.0f, true, 3);
         blob->SetColor(Color(0.4f, 0.6f, 1.0f, 0.25f));
@@ -335,7 +335,6 @@ namespace sneaky
         Drawable *light = guard->AddDrawable(GetCache().GetTexture("lantern_light.tex"), CHARACTER_SCALE * 16.0f, true, 3);
         light->SetColor(Color(1.0f, 1.0f, 1.0f, 0.25f));
         guard->AddDrawable(GetCache().GetTexture("guard.tex"), CHARACTER_SCALE, false, 2);
-        guard->AddDrawable(GetCache().GetTexture("character_shadow.tex"), CHARACTER_SCALE * 1.2f, false, 0);
 
         Brain *brain = GetAllocator().new_object<GuardBrain>(this, &m_nav, m_random);
         guard->SetBrain(brain);
@@ -576,7 +575,11 @@ namespace sneaky
     }
 
     static bool CompareDrawables(const Drawable *a, const Drawable *b)
-    { return a->GetLayer() < b->GetLayer(); }
+    {
+        const bool layer = a->GetLayer() < b->GetLayer();
+        const bool layerSame = a->GetLayer() == b->GetLayer();
+        return layer || (layerSame && a->GetTexture() < b->GetTexture());
+    }
 
     void SneakyState::DrawDrawables()
     {

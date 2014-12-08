@@ -55,11 +55,14 @@ namespace sneaky
         renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
     }
 
-    void Drawable::SetColor(const rob::Color &color)
+    void Drawable::SetColor(const Color &color)
     { m_color = color; }
 
     void Drawable::SetTexture(TextureHandle texture)
     { m_texture = texture; }
+
+    TextureHandle Drawable::GetTexture() const
+    { return m_texture; }
 
     void Drawable::SetTextureScale(float scale)
     { m_scale = vec2f(scale); }

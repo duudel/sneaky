@@ -34,6 +34,8 @@ namespace sneaky
         void SetColor(const rob::Color &color);
 
         void SetTexture(rob::TextureHandle texture);
+        rob::TextureHandle GetTexture() const;
+
         void SetTextureScale(float scale);
         void SetTextureScale(float scaleX, float scaleY);
 

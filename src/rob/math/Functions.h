@@ -27,6 +27,13 @@ namespace rob
         return cv;
     }
 
+    template <class V, class T>
+    inline V Lerp(const V &a, const V &b, T t)
+    {
+        return a * (1.0f - t) + b * t;
+    }
+
+
     template <class T>
     inline T Abs(T a)
     {
