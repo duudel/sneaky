@@ -73,7 +73,11 @@ namespace sneaky
 
         void SetRotation(const vec2f &dir);
 
-        vec2f GetDimensions() const;
+        void UpdateSize() const;
+        void InvalidateSize() { m_sizeInvalid = true; }
+        vec2f GetSize() const;
+        void UpdateModelMatrix();
+        mat4f GetModelMatrix() const;
 
         void SetBody(b2Body *body) { m_body = body; }
         b2Body* GetBody() { return m_body; }
@@ -90,15 +94,6 @@ namespace sneaky
         Color GetColor() const;
         void SetDebugColor(const Color &color);
         Color GetDebugColor() const;
-
-        void SetTexture(rob::TextureHandle texture);
-        rob::TextureHandle GetTexture() const;
-
-        void SetTextureScale(float scale)
-        { m_textureScale = scale; }
-
-        void SetLayer(int layer);
-        int GetLayer() const;
 
         void SetDestroyed(bool destroyed)
         { m_destroyed = destroyed; }
@@ -120,11 +115,13 @@ namespace sneaky
         b2Body *m_body;
         Brain *m_brain;
 
+        mutable vec2f m_size;
+        mutable bool m_sizeInvalid;
+
+        mat4f m_modelMat;
+
         Color m_color;
         Color m_debugColor;
-        rob::TextureHandle m_texture;
-        float m_textureScale;
-        int m_renderLayer;
 
         bool m_destroyed;
         bool m_debugDraw;

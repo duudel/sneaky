@@ -345,7 +345,8 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&bodyDef);
 
         cake->SetBody(body);
-        cake->SetTexture(GetCache().GetTexture("cake.tex"));
+//        cake->SetTexture(GetCache().GetTexture("cake.tex"));
+        cake->AddDrawable(GetCache().GetTexture("cake.tex"));
 
         b2CircleShape shape;
         shape.m_radius = 1.5f;
@@ -609,30 +610,33 @@ namespace sneaky
         }
         DrawDrawables();
 
-        int maxLayer = 0, layer;
-        for (layer = 0; layer < maxLayer + 1 && layer < 2; layer++)
-        {
-            for (size_t i = 0; i < m_objectCount; i++)
-            {
-                const int l = m_objects[i]->GetLayer();
-                if (l == layer)
-                    m_objects[i]->Render(&renderer);
-                if (l > maxLayer)
-                    maxLayer = l;
-            }
-        }
+        for (size_t i = 0; i < m_objectCount; i++)
+            m_objects[i]->Render(&renderer);
 
-        for (; layer < maxLayer + 1; layer++)
-        {
-            for (size_t i = 0; i < m_objectCount; i++)
-            {
-                const int l = m_objects[i]->GetLayer();
-                if (l == layer)
-                    m_objects[i]->Render(&renderer);
-                if (l > maxLayer)
-                    maxLayer = l;
-            }
-        }
+//        int maxLayer = 0, layer;
+//        for (layer = 0; layer < maxLayer + 1 && layer < 2; layer++)
+//        {
+//            for (size_t i = 0; i < m_objectCount; i++)
+//            {
+//                const int l = m_objects[i]->GetLayer();
+//                if (l == layer)
+//                    m_objects[i]->Render(&renderer);
+//                if (l > maxLayer)
+//                    maxLayer = l;
+//            }
+//        }
+//
+//        for (; layer < maxLayer + 1; layer++)
+//        {
+//            for (size_t i = 0; i < m_objectCount; i++)
+//            {
+//                const int l = m_objects[i]->GetLayer();
+//                if (l == layer)
+//                    m_objects[i]->Render(&renderer);
+//                if (l > maxLayer)
+//                    maxLayer = l;
+//            }
+//        }
 
         if (m_drawBox2D)
         {

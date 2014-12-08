@@ -32,7 +32,6 @@ namespace sneaky
 //            renderer->SetColor(m_debugColor);
 //        else
 //            renderer->SetColor(m_color);
-//        renderer->SetColor(Color::White);
 
         Color color(m_color);
         if (m_additive)
@@ -47,10 +46,9 @@ namespace sneaky
         }
         renderer->SetColor(color);
 
-        const mat4f model = FromB2Transform(m_object->GetBody()->GetTransform());
-        renderer->SetModel(model);
+        renderer->SetModel(m_object->GetModelMatrix());
 
-        const vec2f dim = m_object->GetDimensions() * m_scale;
+        const vec2f dim = m_object->GetSize() * m_scale;
         renderer->GetGraphics()->SetUniform(renderer->GetGlobals().texture0, 1);
         renderer->GetGraphics()->BindTexture(1, m_texture);
         renderer->BindTextureShader();
@@ -86,11 +84,11 @@ namespace sneaky
     GameObject::GameObject()
         : m_body(nullptr)
         , m_brain(nullptr)
+        , m_size(vec2f(1.0f))
+        , m_sizeInvalid(true)
+        , m_modelMat(mat4f::Identity)
         , m_color(Color::White)
         , m_debugColor(Color::White)
-        , m_texture(InvalidHandle)
-        , m_textureScale(1.0f)
-        , m_renderLayer(0)
         , m_destroyed(false)
         , m_debugDraw(false)
         , m_drawableCount(0)
@@ -120,15 +118,20 @@ namespace sneaky
     void GameObject::SetRotation(const vec2f &dir)
     {
         m_body->SetTransform(ToB2(GetPosition()), b2Atan2(-dir.x, dir.y));
-//        m_body->SetTransform(ToB2(GetPosition()), b2Atan2(dir.y, dir.x));
     }
 
-    vec2f GameObject::GetDimensions() const
+    void GameObject::UpdateSize() const
     {
+        m_sizeInvalid = false;
+
         const b2Fixture *fixture = m_body->GetFixtureList();
         while (fixture && fixture->IsSensor())
             fixture = fixture->GetNext();
-        if (!fixture) return vec2f::Zero;
+        if (!fixture)
+        {
+            m_size = vec2f::Zero;
+            return;
+        }
 
         const b2Shape *shape = fixture->GetShape();
 
@@ -155,8 +158,21 @@ namespace sneaky
             fixture = fixture->GetNext();
         }
 
-        return FromB2(aabb.GetExtents());
+        m_size = FromB2(aabb.GetExtents());
     }
+
+    vec2f GameObject::GetSize() const
+    {
+        if (m_sizeInvalid)
+            UpdateSize();
+        return m_size;
+    }
+
+    void GameObject::UpdateModelMatrix()
+    { m_modelMat = FromB2Transform(m_body->GetTransform()); }
+
+    mat4f GameObject::GetModelMatrix() const
+    { return m_modelMat; }
 
     void GameObject::SetBrain(Brain *brain)
     {
@@ -204,62 +220,20 @@ namespace sneaky
     Color GameObject::GetDebugColor() const
     { return m_debugColor; }
 
-    void GameObject::SetTexture(TextureHandle texture)
-    { m_texture = texture; }
-
-    TextureHandle GameObject::GetTexture() const
-    { return m_texture; }
-
-    void GameObject::SetLayer(int layer)
-    { m_renderLayer = layer; }
-
-    int GameObject::GetLayer() const
-    { return m_renderLayer; }
-
     void GameObject::Update(const GameTime &gameTime)
     {
         if (m_brain) m_brain->Update(gameTime);
+        UpdateModelMatrix();
     }
 
     void GameObject::Render(Renderer *renderer)
     {
-        vec2f dim = GetDimensions();
-
         if (m_brain && m_debugDraw)
             renderer->SetColor(m_debugColor);
         else
             renderer->SetColor(m_color);
 
-        const mat4f model = FromB2Transform(m_body->GetTransform());
-        renderer->SetModel(model);
-
-        if (m_texture == InvalidHandle)
-        {
-//            const b2Fixture *fixture = m_body->GetFixtureList();
-//            const b2Shape *shape = fixture->GetShape();
-//            renderer->BindColorShader();
-//            switch (shape->GetType())
-//            {
-//            case b2Shape::e_polygon:
-//                renderer->DrawFilledRectangle(-dim.x, -dim.y, dim.x, dim.y);
-//                break;
-//
-//            case b2Shape::e_circle:
-//                renderer->DrawFilledCircle(0.0f, 0.0f, dim.x);
-//                break;
-//
-//            default:
-//                break;
-//            }
-        }
-        else
-        {
-            dim *= m_textureScale;
-            renderer->GetGraphics()->SetUniform(renderer->GetGlobals().texture0, 1);
-            renderer->GetGraphics()->BindTexture(1, m_texture);
-            renderer->BindTextureShader();
-            renderer->DrawTexturedRectangle(-dim.x, -dim.y, dim.x, dim.y);
-        }
+        renderer->SetModel(m_modelMat);
 
         if (m_brain) m_brain->Render(renderer);
         if (m_brain && m_debugDraw) m_brain->DebugRender(renderer);
