@@ -17,7 +17,7 @@ namespace rob
 namespace sneaky
 {
 
-    constexpr size_t MAX_PATH_LEN = 256;
+    constexpr size_t MAX_PATH_LEN = 128;
 
     class NavPath
     {

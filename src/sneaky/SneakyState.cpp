@@ -215,12 +215,20 @@ namespace sneaky
 
         m_cake = CreateCake(m_nav.GetRandomNavigableWorldPoint(m_random));
 
+        const vec2f cakePos = m_cake->GetPosition();
+        vec2f plPos(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM);
+        if (cakePos.x < 0.0f) plPos.x = PLAY_AREA_RIGHT;
+        if (cakePos.y < 0.0f) plPos.y = PLAY_AREA_TOP;
+
+        m_nav.GetMesh().GetClampedFaceIndex(&plPos);
+
+        CreatePlayer(plPos);
+//        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
+
         for (size_t i = 0; i < 10; i++)
         {
             CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
         }
-
-        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
     }
 
     GameObject* SneakyState::CreateObject(GameObject *prevLink /*= nullptr*/)

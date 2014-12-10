@@ -51,7 +51,7 @@ namespace sneaky
         }
         else
         {
-            if (index < MAX_PATH_LEN)
+            if (index <= m_len && m_len < MAX_PATH_LEN)
                 InsertVertex(index, v.x, v.y);
             else
                 return false;

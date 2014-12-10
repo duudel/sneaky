@@ -113,7 +113,8 @@ namespace sneaky
         const vec2f right = m_owner->GetRight();
         if (m_rightSensor.HitsObstacle() && !m_leftSensor.HitsObstacle())
         {
-            const vec2f off = m_owner->GetPosition() - right * 1.0f + forward * 2.0f;
+            vec2f off = m_owner->GetPosition() - right * 1.0f + forward * 2.0f;
+            m_nav->GetMesh().GetClampedFaceIndex(&off);
             if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
             {
                 Navigate(m_path->GetDestination());
@@ -121,7 +122,8 @@ namespace sneaky
         }
         else if (m_leftSensor.HitsObstacle() && !m_rightSensor.HitsObstacle())
         {
-            const vec2f off = m_owner->GetPosition() + right * 1.0f + forward * 2.0f;
+            vec2f off = m_owner->GetPosition() + right * 1.0f + forward * 2.0f;
+            m_nav->GetMesh().GetClampedFaceIndex(&off);
             if (!m_path->TryInsertVertex(m_pathPos, off, 2.0f))
             {
                 Navigate(m_path->GetDestination());
@@ -131,7 +133,7 @@ namespace sneaky
 
     void GuardBrain::Move(float speed, float dt)
     {
-        AvoidObstacles();
+//        AvoidObstacles();
 
         const vec2f target = m_path->GetVertex(m_pathPos);
         const vec2f delta = (target - m_owner->GetPosition());
