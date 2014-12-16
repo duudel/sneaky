@@ -32,6 +32,8 @@ namespace sneaky
         void SetOwner(GameObject *owner) { m_owner = owner; }
         virtual void OnInitialize() { }
 
+        virtual void ReportSound(const vec2f &position, const float volume) { }
+
     protected:
         GameObject *m_owner;
     };

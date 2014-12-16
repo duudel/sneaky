@@ -26,6 +26,8 @@ namespace sneaky
         , m_stateTimer()
         , m_watchTimer(0.0f)
         , m_lastKnownPlayerPos()
+        , m_soundHeard(false)
+        , m_soundSource()
     {
         m_path = m_nav->ObtainNavPath();
     }
@@ -46,19 +48,43 @@ namespace sneaky
         m_leftSensor.SetBody(m_owner->GetBody());
         m_leftSensor.SetShape(&leftShape);
 
+        const float visSize = 15.0f;
         b2PolygonShape visionShape;
-        b2Vec2 verts[] = { b2Vec2(0.0f, 0.0f),
-            b2Vec2(7.0f, 17.0f), b2Vec2(4.0f, 23.0f), b2Vec2(-4.0f, 23.0f), b2Vec2(-7.0f, 17.0f) };
+        b2Vec2 verts[] = {
+            b2Vec2(0.0f, 0.0f),
+            b2Vec2(visSize / 3.0f, visSize * (2.0f/3.0f)),
+            b2Vec2(2.6f * visSize/16.0f, visSize),
+            b2Vec2(-2.6f * visSize/16.0f, visSize),
+            b2Vec2(-visSize / 3.0f, visSize * (2.0f/3.0f))
+        };
         visionShape.Set(verts, 5);
 
         m_visionSensor.SetBody(m_owner->GetBody());
         m_visionSensor.SetShape(&visionShape);
 
         m_prevPosition = m_owner->GetPosition();
-//        Navigate(m_owner->GetPosition());
 
         ChangeToWatchState();
         m_stateTimer = m_rand.GetReal(0.0f, 4.0f);
+    }
+
+    void GuardBrain::ReportSound(const vec2f &position, const float volume)
+    {
+        const float sqrDist = rob::Distance2(m_owner->GetPosition(), position);
+        if (volume > 0.1f * sqrDist) // volume / sqrDist > 1.0f
+        {
+            HearSound(position);
+        }
+    }
+
+    void GuardBrain::HearSound(const vec2f &position)
+    {
+        if (m_state != State::Chase)
+        {
+            m_soundHeard = true;
+            m_soundSource = position;
+//            rob::log::Info("heard!");
+        }
     }
 
     bool GuardBrain::LookForPlayer()
@@ -82,6 +108,30 @@ namespace sneaky
     {
         if (LookForPlayer())
             ChangeToChaseState();
+    }
+
+    void GuardBrain::StartSuspectingIfHeard()
+    {
+        if (m_soundHeard)
+        {
+            ChangeToSuspectState();
+            m_soundHeard = false;
+        }
+    }
+
+    void GuardBrain::ChangeToSuspectState()
+    {
+        m_owner->SetDebugColor(Color::Green);
+        m_stateTimer = m_rand.GetReal(4.0f, 8.0f);
+        m_path->Clear();
+        m_state = State::Suspect;
+    }
+
+    void GuardBrain::ChangeToInspectState()
+    {
+        m_owner->SetDebugColor(Color::LightBlue);
+        m_stateTimer = m_rand.GetReal(2.0f, 4.0f);
+        m_state = State::Inspect;
     }
 
     void GuardBrain::ChangeToWatchState()
@@ -164,6 +214,65 @@ namespace sneaky
     bool GuardBrain::IsEndOfPath() const
     { return !(m_pathPos < m_path->GetLength()); }
 
+    void GuardBrain::Inspect(const vec2f &location)
+    {
+        ChangeToInspectState();
+        Navigate(location + m_rand.GetDirection() * m_rand.GetReal(0.5, 2.5));
+    }
+
+    void GuardBrain::UpdateSuspect(const rob::GameTime &gameTime)
+    {
+        b2Body *body = m_owner->GetBody();
+        body->SetLinearVelocity(b2Vec2(0.0f, 0.0f));
+
+        const vec2f delta = m_soundSource - m_owner->GetPosition();
+        const float angle = b2Atan2(-delta.x, delta.y);
+
+        const float bodyAngle = std::fmod(body->GetAngle(), 2.0f * rob::PI_f);
+
+        float angV = (angle - bodyAngle) / rob::PI_f;
+        if (angV > 1.0f) angV -= 1.0f;
+        if (angV < -1.0f) angV += 1.0f;
+
+        if (angV > 0.0f)
+            body->SetAngularVelocity(3.14f * 0.5f);
+        else
+            body->SetAngularVelocity(-3.14f * 0.5f);
+
+        if (angV * angV < 0.2f)
+        {
+            Navigate(m_soundSource);
+            m_state = State::Patrol;
+            Inspect(m_soundSource);
+        }
+
+        if (m_stateTimer <= 0.0f)
+            ChangeToPatrolState();
+
+        m_owner->SetDebugColor(Color::Green);
+
+        StartSuspectingIfHeard();
+        StartChasingIfPlayerSighted();
+    }
+
+    void GuardBrain::UpdateInspect(const rob::GameTime &gameTime)
+    {
+        if (IsEndOfPath())
+            ChangeToWatchState();
+        else
+        {
+            Move(4.0f, gameTime.GetDeltaSeconds());
+            if (IsStuck())
+                ChangeToPatrolState();
+        }
+        m_prevPosition = m_owner->GetPosition();
+
+        m_owner->SetDebugColor(Color::LightBlue);
+
+        StartSuspectingIfHeard();
+        StartChasingIfPlayerSighted();
+    }
+
     void GuardBrain::UpdateWatch(const rob::GameTime &gameTime)
     {
         b2Body *body = m_owner->GetBody();
@@ -196,6 +305,7 @@ namespace sneaky
 
         m_owner->SetDebugColor(Color::Yellow);
 
+        StartSuspectingIfHeard();
         StartChasingIfPlayerSighted();
     }
 
@@ -213,6 +323,7 @@ namespace sneaky
 
         m_owner->SetDebugColor(Color::Blue);
 
+        StartSuspectingIfHeard();
         StartChasingIfPlayerSighted();
     }
 
@@ -241,6 +352,8 @@ namespace sneaky
 //            Move(8.0f, gameTime.GetDeltaSeconds());
 //            if (IsEndOfPath())
                 ChangeToWatchState();
+
+            StartSuspectingIfHeard();
         }
         else
         {
@@ -264,6 +377,14 @@ namespace sneaky
             UpdatePatrol(gameTime);
             break;
 
+        case State::Suspect:
+            UpdateSuspect(gameTime);
+            break;
+
+        case State::Inspect:
+            UpdateInspect(gameTime);
+            break;
+
         case State::Chase:
             UpdateChase(gameTime);
             break;
@@ -285,6 +406,9 @@ namespace sneaky
     void GuardBrain::DebugRender(rob::Renderer *renderer) const
     {
         m_nav->RenderPath(renderer, m_path);
+        const vec2f pos = m_owner->GetPosition();
+        renderer->SetColor(m_owner->GetDebugColor());
+        renderer->DrawCircle(pos.x, pos.y, 1.2f);
     }
 
 } // sneaky

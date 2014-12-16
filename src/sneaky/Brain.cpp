@@ -19,6 +19,33 @@ namespace sneaky
         m_cakeSensor.SetShape(&shape);
     }
 
+    struct SoundCallback : public b2QueryCallback
+    {
+        const vec2f m_position;
+        const float m_volume;
+
+        explicit SoundCallback(const vec2f &position, const float volume)
+            : m_position(position), m_volume(volume) { }
+
+        bool ReportFixture(b2Fixture *fixture) override
+        {
+            const b2Filter &filter = fixture->GetFilterData();
+            if (filter.categoryBits & GuardBit)
+            {
+                void *userData = fixture->GetBody()->GetUserData();
+                if (userData)
+                {
+                    GameObject *guard = static_cast<GameObject*>(userData);
+                    guard->GetBrain()->ReportSound(m_position, m_volume);
+                }
+            }
+            return true;
+        }
+
+        bool ShouldQueryParticleSystem(const b2ParticleSystem *ps) override
+        { return false; }
+    };
+
     void PlayerBrain::Update(const rob::GameTime &gameTime)
     {
         if (m_cakeSensor.HitsCake())
@@ -54,8 +81,14 @@ namespace sneaky
             speed = 8.0f;
         }
 
-        const vec2f velocity = offset * speed; // * dt;
-//        m_owner->MoveLocal(velocity);
+        const vec2f velocity = offset * speed;
+        const float volume = (offset * speed).Length2();
+        SoundCallback soundCb(m_owner->GetPosition(), volume * 0.5f);
+        b2CircleShape shape;
+        shape.m_radius = 16.0f;
+        const b2Transform &tr = m_owner->GetBody()->GetTransform();
+        m_owner->GetBody()->GetWorld()->QueryShapeAABB(&soundCb, shape, tr);
+
         const vec2f globalVel = FromB2(m_owner->GetBody()->GetWorldVector(ToB2(velocity)));
         m_owner->GetBody()->SetLinearVelocity(ToB2(globalVel));
     }

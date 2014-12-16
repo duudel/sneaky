@@ -19,6 +19,8 @@ namespace sneaky
         {
             Watch,
             Patrol,
+            Suspect,
+            Inspect,
             Chase
         };
 
@@ -27,11 +29,17 @@ namespace sneaky
         ~GuardBrain();
 
         void OnInitialize() override;
+        void ReportSound(const vec2f &position, const float volume) override;
 
     private:
+        void HearSound(const vec2f &position);
+
         bool LookForPlayer();
         void StartChasingIfPlayerSighted();
+        void StartSuspectingIfHeard();
 
+        void ChangeToSuspectState();
+        void ChangeToInspectState();
         void ChangeToWatchState();
         void ChangeToPatrolState();
         void ChangeToChaseState();
@@ -41,6 +49,10 @@ namespace sneaky
         bool IsStuck() const { return m_stuckMeter > 5.0f; }
         bool IsEndOfPath() const;
 
+        void Inspect(const vec2f &location);
+
+        void UpdateSuspect(const rob::GameTime &gameTime);
+        void UpdateInspect(const rob::GameTime &gameTime);
         void UpdateWatch(const rob::GameTime &gameTime);
         void UpdatePatrol(const rob::GameTime &gameTime);
         void UpdateChase(const rob::GameTime &gameTime);
@@ -69,6 +81,9 @@ namespace sneaky
         float m_stateTimer;
         float m_watchTimer;
         vec2f m_lastKnownPlayerPos;
+
+        bool m_soundHeard;
+        vec2f m_soundSource;
     };
 
 } // sneaky
