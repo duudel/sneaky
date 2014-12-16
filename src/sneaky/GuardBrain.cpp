@@ -249,21 +249,24 @@ namespace sneaky
 
         const float bodyAngle = std::fmod(body->GetAngle(), 2.0f * rob::PI_f);
 
-        float angV = (angle - bodyAngle) / rob::PI_f;
-        if (angV > 1.0f) angV -= 1.0f;
-        if (angV < -1.0f) angV += 1.0f;
-
+        float angV = (angle - bodyAngle); // / rob::PI_f;
+        if (angV > rob::PI_f) angV -= rob::PI_f;
+        if (angV < -rob::PI_f) angV += rob::PI_f;
+//
         angV = rob::Clamp(angV, -2.0f * rob::PI_f, 2.0f * rob::PI_f);
-        body->SetAngularVelocity(angV);
+
+        const float angVel = (angV > 0.0f) ? rob::Clamp(angV, rob::PI_f, angV)
+                                            : -rob::Clamp(-angV, rob::PI_f, -angV);
+        body->SetAngularVelocity(angVel);
 
 //        if (angV > 0.0f)
 //            body->SetAngularVelocity(3.14f * 0.5f);
 //        else
 //            body->SetAngularVelocity(-3.14f * 0.5f);
 
-        if (angV * angV < 0.2f)
+        if (angV * angV < 0.05f)
         {
-            const float thresold = 1.0f;
+            const float thresold = 2.0f;
             if (m_soundIntrest > thresold)
                 Inspect(m_soundSource);
         }
