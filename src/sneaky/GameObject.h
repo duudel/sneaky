@@ -94,8 +94,6 @@ namespace sneaky
         const Drawable* GetDrawables() const;
         size_t GetDrawableCount() const;
 
-        void SetColor(const Color &color);
-        Color GetColor() const;
         void SetDebugColor(const Color &color);
         Color GetDebugColor() const;
 
@@ -124,7 +122,6 @@ namespace sneaky
 
         mat4f m_modelMat;
 
-        Color m_color;
         Color m_debugColor;
 
         bool m_destroyed;

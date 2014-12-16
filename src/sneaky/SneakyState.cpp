@@ -197,10 +197,10 @@ namespace sneaky
         const float wallSize = 4.0f;
         const float wallSize2 = wallSize / 2.0f;
         const float wallSize3 = wallSize / 3.0f;
-        CreateStaticBox(vec2f(0.0f, PLAY_AREA_BOTTOM - wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Floor
-        CreateStaticBox(vec2f(0.0f, PLAY_AREA_TOP + wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Ceiling
-        CreateStaticBox(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Left wall
-        CreateStaticBox(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Right wall
+        CreateWall(vec2f(0.0f, PLAY_AREA_BOTTOM - wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Floor
+        CreateWall(vec2f(0.0f, PLAY_AREA_TOP + wallSize3), 0.0f, PLAY_AREA_W / 2.0f, wallSize2); // Ceiling
+        CreateWall(vec2f(PLAY_AREA_LEFT - wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Left wall
+        CreateWall(vec2f(PLAY_AREA_RIGHT + wallSize3, 0.0f), 0.0f, wallSize2, PLAY_AREA_H / 2.0f); // Right wall
 
         m_nav.CreateNavMesh(GetAllocator(), m_world, PLAY_AREA_W / 2.0f, PLAY_AREA_H / 2.0f, 1.0f);
         log::Info("NavMesh size: ", m_nav.GetMesh().GetByteSizeUsed(), " / ", m_nav.GetMesh().GetByteSize(), " bytes");
@@ -248,7 +248,7 @@ namespace sneaky
 
     GameObject* SneakyState::CreateStaticBox(const vec2f &position, float angle, float w, float h)
     {
-        GameObject *object = m_objectPool.Obtain();
+        GameObject *object = CreateObject(nullptr);
 
         b2BodyDef def;
         def.type = b2_staticBody;
@@ -257,7 +257,6 @@ namespace sneaky
         b2Body *body = m_world->CreateBody(&def);
 
         object->SetBody(body);
-        object->SetColor(Color(0.65f, 0.63f, 0.65f));
 
         b2PolygonShape shape;
         shape.SetAsBox(w, h);
@@ -266,7 +265,15 @@ namespace sneaky
         filter.categoryBits = StaticBit;
         fix->SetFilterData(filter);
 
-        m_objects[m_objectCount++] = object;
+        return object;
+    }
+
+    GameObject* SneakyState::CreateWall(const vec2f &position, float angle, float w, float h)
+    {
+        GameObject *object = CreateStaticBox(position, angle, w, h);
+        object->AddDrawable(GetCache().GetTexture("wall.tex"), 1.0f, false, 4);
+        Drawable *shadow = object->AddDrawable(GetCache().GetTexture("roof_shadow.tex"), 1.4f, false, 3);
+        shadow->SetColor(Color(1.0f, 1.0f, 1.0f, 0.3f));
         return object;
     }
 

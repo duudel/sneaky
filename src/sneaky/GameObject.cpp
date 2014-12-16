@@ -87,7 +87,6 @@ namespace sneaky
         , m_size(vec2f(1.0f))
         , m_sizeInvalid(true)
         , m_modelMat(mat4f::Identity)
-        , m_color(Color::White)
         , m_debugColor(Color::White)
         , m_destroyed(false)
         , m_debugDraw(false)
@@ -208,12 +207,6 @@ namespace sneaky
     size_t GameObject::GetDrawableCount() const
     { return m_drawableCount; }
 
-    void GameObject::SetColor(const Color &color)
-    { m_color = color; }
-
-    Color GameObject::GetColor() const
-    { return m_color; }
-
     void GameObject::SetDebugColor(const Color &color)
     { m_debugColor = color; }
 
@@ -228,11 +221,6 @@ namespace sneaky
 
     void GameObject::Render(Renderer *renderer)
     {
-        if (m_brain && m_debugDraw)
-            renderer->SetColor(m_debugColor);
-        else
-            renderer->SetColor(m_color);
-
         renderer->SetModel(m_modelMat);
 
         if (m_brain) m_brain->Render(renderer);
