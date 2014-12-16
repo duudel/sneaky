@@ -32,7 +32,7 @@ namespace sneaky
         void ReportSound(const vec2f &position, const float volume) override;
 
     private:
-        void HearSound(const vec2f &position);
+        void HearSound(const vec2f &position, float volume);
 
         bool LookForPlayer();
         void StartChasingIfPlayerSighted();
@@ -84,6 +84,7 @@ namespace sneaky
 
         bool m_soundHeard;
         vec2f m_soundSource;
+        float m_soundIntrest;
     };
 
 } // sneaky
