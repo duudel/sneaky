@@ -56,6 +56,9 @@ namespace sneaky
         void PlayerCaught(const vec2f &pos);
         bool IsGameOver() const;
 
+        SoundPlayer& GetSoundPlayer() { return m_sounds; }
+        Random& GetRandom() { return m_random; }
+
         void RecalcProj();
         void OnResize(int w, int h) override;
 

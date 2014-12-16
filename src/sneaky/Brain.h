@@ -71,6 +71,7 @@ namespace sneaky
             , m_game(game)
             , m_input(input)
             , m_target(0.0f, 0.0f)
+            , m_footStepTimer(0.0f)
         { }
 
         void OnInitialize() override;
@@ -82,6 +83,7 @@ namespace sneaky
         Input *m_input;
         vec2f m_target;
         CakeSensor m_cakeSensor;
+        float m_footStepTimer;
     };
 
 } // sneaky

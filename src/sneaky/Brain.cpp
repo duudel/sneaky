@@ -11,14 +11,6 @@
 namespace sneaky
 {
 
-    void PlayerBrain::OnInitialize()
-    {
-        b2CircleShape shape;
-        shape.m_radius = 1.1f;
-        m_cakeSensor.SetBody(m_owner->GetBody());
-        m_cakeSensor.SetShape(&shape);
-    }
-
     struct SoundCallback : public b2QueryCallback
     {
         const vec2f m_position;
@@ -46,8 +38,19 @@ namespace sneaky
         { return false; }
     };
 
+
+    void PlayerBrain::OnInitialize()
+    {
+        b2CircleShape shape;
+        shape.m_radius = 1.1f;
+        m_cakeSensor.SetBody(m_owner->GetBody());
+        m_cakeSensor.SetShape(&shape);
+    }
+
     void PlayerBrain::Update(const rob::GameTime &gameTime)
     {
+        if (m_footStepTimer > 0.0f) m_footStepTimer -= gameTime.GetDeltaSeconds();
+
         if (m_cakeSensor.HitsCake())
             m_game->CakeEaten();
 
@@ -75,6 +78,8 @@ namespace sneaky
         }
         offset.SafeNormalize();
 
+        const vec2f position = m_owner->GetPosition();
+
         float speed = 4.0f;
         if (m_input->KeyDown(Keyboard::Scancode::LShift))
         {
@@ -83,11 +88,17 @@ namespace sneaky
 
         const vec2f velocity = offset * speed;
         const float volume = (offset * speed).Length2();
-        SoundCallback soundCb(m_owner->GetPosition(), volume * 0.5f);
+        SoundCallback soundCb(position, volume * 0.5f);
         b2CircleShape shape;
         shape.m_radius = 16.0f;
         const b2Transform &tr = m_owner->GetBody()->GetTransform();
         m_owner->GetBody()->GetWorld()->QueryShapeAABB(&soundCb, shape, tr);
+
+        if (m_footStepTimer <= 0.0f && volume > 1.0f)
+        {
+            m_game->GetSoundPlayer().PlayFootstep(position, volume / 400.0f, m_game->GetRandom());
+            m_footStepTimer = 0.4f;
+        }
 
         const vec2f globalVel = FromB2(m_owner->GetBody()->GetWorldVector(ToB2(velocity)));
         m_owner->GetBody()->SetLinearVelocity(ToB2(globalVel));
