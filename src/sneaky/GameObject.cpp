@@ -11,6 +11,9 @@ namespace sneaky
     using namespace rob;
 
 
+    const Color g_ambientLight(0.5f, 0.5f, 0.75f);
+//    const Color g_ambientLight(0.42f, 0.42f, 0.6f);
+//    const Color g_ambientLight(1.0f, 1.0f, 1.0f);
 
     Drawable::Drawable()
         : m_object(nullptr)
@@ -28,11 +31,6 @@ namespace sneaky
     {
         if (m_texture == InvalidHandle) return;
 
-//        if (m_brain && m_debugDraw)
-//            renderer->SetColor(m_debugColor);
-//        else
-//            renderer->SetColor(m_color);
-
         Color color(m_color);
         if (m_additive)
         {
@@ -40,8 +38,7 @@ namespace sneaky
         }
         else
         {
-//            color = Color(m_color.ToVec4() * vec4f(0.75f, 0.75f, 0.9f, 1.0f));
-            color = Color(m_color.ToVec4() * vec4f(0.5f, 0.5f, 0.75f, 1.0f));
+            color = Color(m_color.ToVec4() * g_ambientLight.ToVec4());
             renderer->GetGraphics()->SetBlendAlpha();
         }
         renderer->SetColor(color);

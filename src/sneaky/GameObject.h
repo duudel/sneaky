@@ -24,6 +24,8 @@ namespace sneaky
     class Brain;
     class GameObject;
 
+    extern const Color g_ambientLight;
+
     class Drawable
     {
     public:
