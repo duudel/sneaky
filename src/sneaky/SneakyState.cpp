@@ -221,13 +221,18 @@ namespace sneaky
         if (cakePos.y < 0.0f) plPos.y = PLAY_AREA_TOP;
 
         m_nav.GetMesh().GetClampedFaceIndex(&plPos);
-
         CreatePlayer(plPos);
-//        CreatePlayer(m_nav.GetRandomNavigableWorldPoint(m_random));
 
-        for (size_t i = 0; i < 10; i++)
+        const float minDistFromPlayer = 45.0f;
+        const float minDistFromPlayerSqr = minDistFromPlayer*minDistFromPlayer;
+        for (size_t i = 0; i < 8; i++)
         {
-            CreateGuard(m_nav.GetRandomNavigableWorldPoint(m_random));
+            vec2f pos;
+            do
+            {
+                pos = m_nav.GetRandomNavigableWorldPoint(m_random);
+            } while (rob::Distance2(pos, plPos) < minDistFromPlayerSqr);
+            CreateGuard(pos);
         }
     }
 
