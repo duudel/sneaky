@@ -354,7 +354,7 @@ namespace sneaky
 
         Drawable *light = guard->AddDrawable(GetCache().GetTexture("lantern_light.tex"), CHARACTER_SCALE * 16.0f, true, 3);
         light->SetColor(Color(1.0f, 1.0f, 1.0f, 0.25f));
-        guard->AddDrawable(GetCache().GetTexture("guard2.tex"), CHARACTER_SCALE, false, 2);
+        guard->AddDrawable(GetCache().GetTexture("guard.tex"), CHARACTER_SCALE, false, 2);
 
         Brain *brain = GetAllocator().new_object<GuardBrain>(this, &m_nav, m_random);
         guard->SetBrain(brain);
@@ -626,7 +626,7 @@ namespace sneaky
 //        renderer.DrawFilledRectangle(PLAY_AREA_LEFT, PLAY_AREA_BOTTOM, PLAY_AREA_RIGHT, PLAY_AREA_TOP);
 
 //        renderer.SetModel(mat4f::Identity);
-        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("ground2.tex"));
+        renderer.GetGraphics()->BindTexture(0, GetCache().GetTexture("ground.tex"));
         renderer.GetGraphics()->SetUniform(renderer.GetGlobals().texture0, 0);
 //        renderer.SetColor(Color::White);
         renderer.SetColor(Color((g_ambientLight.ToVec4() + vec4f(1.0f)) * 0.5f));
